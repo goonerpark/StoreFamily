@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.ScheduleMapper">
+
+	<!-- 공통 스케줄 -->
+	<select id="schedule" resultType="Schedule">
+		select * from schedule where code = #{code} and day=#{day} order by start_time asc
+	</select>
+	
+	
+	<select id="full_schedule" resultType="Schedule" parameterType="String">
+		select * from schedule where code=#{code} order by start_time asc
+	</select>
+	
+	<select id="employee_list" resultType="Member">
+		select * from member where code=#{code} and id not in(#{id})
+	</select>
+	
+	<select id="this_schedule" resultType="Schedule" parameterType="int">
+		select * from schedule where bno = #{bno}
+	</select>
+	
+	<select id="find_employee" resultType="Member" parameterType="String">
+		select name, code from member where id = #{id}
+	</select>
+	
+	<insert id="schedule_write_ok" keyProperty="bno">
+		<selectKey resultType="int" keyProperty="bno" order="BEFORE">
+			select coalesce(max(bno),0)+1 as bno from schedule
+		</selectKey>
+		
+		insert into schedule(bno,name,start_time,end_time,day,di_time,code,id)
+		values(#{bno},#{name},#{start_time},#{end_time},#{day},#{di_time},#{code},#{id})
+	</insert>
+	
+	<select id="update_get_name" resultType="String">
+		select name from member where id=#{id}
+	</select>
+	
+	<update id="schedule_update_ok" parameterType="Schedule">
+		update schedule set name=#{name}, day=#{day}, start_time=#{start_time}, end_time=#{end_time}, di_time=#{di_time}, id=#{id} where bno=#{bno}
+	</update>
+	
+	<delete id="schedule_delete" parameterType="Schedule">
+		delete from schedule where bno=#{bno}
+	</delete>
+	
+	<select id="ceo_schedule_request_list" resultType="Schedule" parameterType="String">
+		select * from schedule_request where code = #{code} order by bno
+	</select>
+	
+	<update id="ceo_schedule_request_attendance_no" parameterType="int">
+		update schedule_request set request_attendance = -1 where bno=#{bno}
+	</update>
+	
+	<update id="ceo_schedule_request_attendance_yes" parameterType="int">
+		update schedule_request set request_attendance=2 where bno = #{bno}
+	</update>
+</mapper>

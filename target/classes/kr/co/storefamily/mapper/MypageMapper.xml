@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.MypageMapper">
+
+	<insert id="resume_write_ok" parameterType="Resume">
+		insert into resume(title,work_place,work_activity,id,code,name,period,start_day, end_day)
+		values(#{title},#{work_place},#{work_activity},#{id},#{code},#{name},#{period},#{start_day},#{end_day})
+	</insert>
+	
+	<select id="resume_list" resultType="Resume">
+		select * from resume where id=#{id}
+	</select>
+	
+	<select id="resume_content" resultType="Resume">
+		select * from resume where bno = #{bno} and id=#{id}
+	</select>
+	
+	<select id="my_imformation" resultType="Member">
+		select * from member where id=#{id}
+	</select>
+	
+	<update id="member_update_ok" parameterType="Member">
+		update member set pwd = #{pwd}, email=#{email}, bth=#{bth}, gender=#{gender}, address=#{address},
+		address_etc=#{address_etc}, phone=#{phone} where bno=#{bno}
+	</update>
+	
+	<select id="getStore_list" resultType="Member">
+		select * from member where id=#{id}
+	</select>
+	
+	<select id="store_imformation" resultType="Member">
+		select * from store where code=#{code}
+	</select>
+	
+	<update id="store_update_ok" parameterType="Member">
+		update store set bussiness=#{bussiness}, bussinessaddress=#{bussinessaddress}, bussinessaddress_etc=#{bussinessaddress_etc} where bno=#{bno}
+	</update>
+</mapper>

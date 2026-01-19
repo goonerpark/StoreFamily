@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.InsuMapper">
+	<select id="my_member" resultType="Member">
+		select * from member where id=#{id}
+	</select>
+	
+	<select id="member_list" resultType="Member">
+		select * from member where code=#{code} and chk=1
+	</select>
+	
+	<insert id="insu_write_ok" parameterType="Insu">
+		insert into insu(title,name,content,code,id,ch_member_id,insu_img)
+		values(#{title},#{name},#{content},#{code},#{id},#{ch_member_id},#{insu_img})
+	</insert>
+	
+	<select id="insu_list" resultType="Insu">
+		<!-- select * from insu where time=#{time} and code=#{code} -->
+		select * from insu where ch_member_id = #{ch_member_id} and code=#{code}
+	</select>
+	
+	<select id="insu_content" resultType="Insu">
+		select * from insu where bno=#{bno}
+	</select>
+	
+	<select id="insu_reply" resultType="Insu">
+		select * from insu_reply where insu_bno = #{bno}
+	</select>
+	
+	<insert id="insu_content_reply" parameterType="Insu">
+		insert into insu_reply(insu_bno,content,id,code,name)
+		values(#{insu_bno},#{content},#{id},#{code},#{name})
+	</insert>
+	
+	<update id="insu_reply_chong" parameterType="int">
+		update insu set reply_chong = (select count(*) from insu_reply where insu_bno = #{insu_bno}) where bno = #{insu_bno};
+	</update>
+	
+	<delete id="insu_delete" parameterType="int">
+		delete from insu where bno=#{bno}
+	</delete>
+	
+	<update id="insu_ok" parameterType="int">
+		update insu_reply set chk = 1 where bno = #{bno}
+	</update>
+	
+	<update id="insu_chk" parameterType="int">
+		update insu set chk = (select count(*) from insu_reply where insu_bno = #{insu_bno} and chk = 1) where bno = #{insu_bno}
+	</update>	
+	
+	<update id="insu_no" parameterType="int">
+		update insu_reply set chk = 2 where bno = #{bno}
+	</update>
+</mapper>

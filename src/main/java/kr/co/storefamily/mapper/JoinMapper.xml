@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.JoinMapper">
+
+	<select id="local_do_list" resultType="Local_Do">
+		select * from local_do order by bno asc
+	</select>
+	
+	<select id="local_si_list" resultType="Local_Si">
+		select * from local_si where local_do_code = #{local_do_code} order by bno asc;
+	</select>
+	
+	<select id="field_list" resultType="Field">
+		select * from field order by bno asc;
+	</select>
+	
+	<select id="getcode" resultType="Integer">
+		select ifnull(substring(max(code),8,3),"0") from store where code like concat(#{code},'%')
+	</select>
+	
+	<insert id="member_join_ok" parameterType="Member">
+		insert into member(name,id,pwd,email,bth,gender,address,phone,address_etc,code,position,chk)
+		values(#{name},#{id},#{pwd},#{email},#{bth},#{gender},#{address},#{phone},#{address_etc},#{code},#{position},#{chk})
+	</insert>
+	
+	<insert id="store_join_ok" parameterType="Member">
+		insert into store(bussiness,bussinessnum,bussinessaddress,bussinessaddress_etc,field,local_do,local_si,code,id)
+		values(#{bussiness},#{bussinessnum},#{bussinessaddress},#{bussinessaddress_etc},#{field},#{local_do},#{local_si},#{code},#{id})
+	</insert>
+	
+	<select id="check_userid" resultType="int">
+		select count(*) from member where id={id}
+	</select>
+</mapper>

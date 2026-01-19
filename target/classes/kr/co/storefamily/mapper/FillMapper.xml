@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.FillMapper">
+
+	<select id="my_fill_list" resultType="Fill">
+		select * from fill where code=#{code} and id=#{id}
+	</select>
+
+	<select id="my_schedule" resultType="Schedule">
+		select * from schedule where code=#{code} and id=#{id} and 
+		date_format(concat(day," ",start_time),'%Y-%m-%d %H:%i') > date_format(now(),'%Y-%m-%d %H:%i')
+	</select>
+	
+	<select id="this_schedule" resultType="Schedule">
+		select * from schedule where bno = #{schedule_bno}
+	</select>
+	
+	<insert id="fill_write_ok" parameterType="Fill">
+		insert into fill(title,content,name,id,fill_day,fill_start_time,fill_end_time,fill_di_time,sign_day,schedule_bno,code,apply_start_day,apply_end_day)
+		values(#{title},#{content},#{name},#{id},#{fill_day},#{fill_start_time},#{fill_end_time},#{fill_di_time},now(),#{schedule_bno},#{code},#{apply_start_day},#{apply_end_day})
+	</insert>
+	
+	<select id="my_store_fill_list" resultType="Fill">
+		select * from fill where code = #{code}
+	</select>
+	
+	<select id="fill_apply_content" resultType="Fill">
+		select * from fill where bno=#{bno} order by bno desc
+	</select>
+	
+	<select id="fill_local_do" resultType="String">
+		select local_do from local_do where code = #{local_do}
+	</select>
+	
+	<select id="fill_local_si" resultType="String">
+		select local_si from local_si where code=#{local_si} and local_do_code = #{local_do}	
+	</select>
+	
+	<select id="fill_apply_count" resultType="int">
+		select count(*) from fill_apply where fill_bno = #{bno} and id=#{id}
+	</select>
+	
+	<select id="this_apply_list" resultType="Fill">
+		select * from fill_apply where fill_bno = #{bno}
+	</select>
+	
+	<select id="fill_all_list" resultType="Fill">
+		select * from fill where chk=1 order by bno desc
+	</select>
+	
+	<update id="fill_registrar_ok" parameterType="int">
+		update fill set chk=1 where bno=#{bno}
+	</update>
+	
+	<update id="fill_apply_add" parameterType="Fill">
+		update fill set bussiness=#{bussiness}, field=#{field}, local_do=#{local_do}, local_si=#{local_si}, pay=#{pay}"원" where bno=#{bno}
+	</update>
+	
+	<update id="fill_registrar_cancle" parameterType="int">
+		update fill set chk=0, bussiness=null, local_do=null, local_si=null, pay=null where bno=#{bno}
+	</update>
+	
+	<select id="resume_title" resultType="String">
+		select title from resume where bno=#{resume_bno}
+	</select>
+	
+	<insert id="fill_apply" parameterType="Fill">
+		insert into fill_apply(w_name,m_name,id,code,schedule_bno,fill_bno,w_code,resume_bno,resume_title)
+		values(#{w_name},#{m_name},#{id},#{code},#{schedule_bno},#{fill_bno},#{w_code},#{resume_bno},#{resume_title})
+	</insert>
+	
+	<update id="fill_apply_su_up" parameterType="int">
+		update fill set apply_su = apply_su + 1 where bno = #{fill_bno}
+	</update>
+	
+	<delete id="fill_apply_cancle">
+		delete from fill_apply where fill_bno=#{bno} and id=#{id}
+	</delete>
+	
+	<update id="fill_apply_resume_change">
+		update fill_apply set resume_bno = #{resume_bno} where fill_bno=#{bno} and id=#{id}
+	</update>
+	
+	<update id="fill_apply_su_down" parameterType="int">
+		update fill set apply_su = apply_su - 1 where bno = #{fill_bno}
+	</update>
+	
+	<select id="apply_content" resultType="Fill">
+		select * from fill_apply where bno=#{bno}
+	</select>
+	
+	<update id="fill_apply_chk_ok" parameterType="int">
+		update fill_apply set chk = 1 where bno=#{bno}
+	</update>
+	
+	<update id="fill_apply_chk_no" parameterType="int">
+		update fill_apply set chk = 2 where (select count(chk) from fill_apply where chk = 1) >= 1
+		and fill_bno = #{fill_bno} and bno != #{bno}
+	</update>
+	
+	<update id="fill_apply_ok" parameterType="Fill">
+		update schedule set apply_name = #{m_name}, apply_id=#{id}, apply_code=#{code} where bno = #{schedule_bno}
+	</update>
+	
+	<update id="fill_apply_no" parameterType="int">
+		update fill_apply set chk = 2 where bno=#{bno}
+	</update>
+	
+	<update id="fill_apply_reset" parameterType="Fill">
+		update schedule set apply_name = null , apply_id=null, apply_code=null where bno=#{schedule_bno}
+	</update>
+	
+	<select id="resume_list" resultType="Resume">
+		select * from resume where id=#{id}
+	</select>
+	
+	<select id="resume_bno" resultType="int">
+		select resume_bno from fill_apply where fill_bno=#{fill_bno} and id=#{id}
+	</select>
+	
+	<select id="resume_count" resultType="int">
+		select count(*) from fill_apply where fill_bno=#{fill_bno} and id=#{id}
+	</select>
+	
+	<select id="apply_resume_content" resultType="Resume">
+		select * from resume where bno = #{resume_bno}
+	</select>
+</mapper>

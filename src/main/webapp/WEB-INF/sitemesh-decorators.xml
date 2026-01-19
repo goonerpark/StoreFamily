@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decorators defaultdir="/WEB-INF/views/sitemesh">
+ <!-- 제외할 패턴 -->
+ <excludes>
+ 	<pattern> /home </pattern>
+ 	<pattern> /login </pattern>
+ 	<pattern> /login_ok</pattern>
+	<pattern> /schedule</pattern>
+	<pattern> /schedule?day=*</pattern>  
+	<pattern> /schedule_write</pattern>
+	<pattern> /schedule_write?day=*</pattern>
+	<pattern> /schedule_update</pattern>
+	<pattern> /schedule_update?bno=*</pattern>
+	<pattern> /fill_all_list</pattern>
+	<pattern> /fill_content?bno=*</pattern>
+	<pattern> /apply_go?bno=*</pattern>
+	<pattern> /resume_write </pattern>
+ </excludes>
+ <!-- 기본 패턴 -->
+ <decorator name="default" page="default.jsp">
+  <pattern> * </pattern> 
+ </decorator>
+ 
+ <!-- 모바일 패턴 -->
+ <decorator name="mobileDefault" page="mobileDefault.jsp">
+  <pattern>/m.*.do</pattern> 
+ </decorator>
+</decorators>
+
+ 
