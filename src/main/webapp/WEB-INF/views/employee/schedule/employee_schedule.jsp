@@ -155,7 +155,6 @@
 		document.employee_schedule.action = 'schedule_request';
 		document.employee_schedule.submit();
 	}
-	
 </script>
 </head>
 <body onload="init(${year},${month-1})">  
