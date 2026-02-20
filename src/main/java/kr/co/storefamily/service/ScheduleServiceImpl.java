@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import kr.co.storefamily.mapper.ScheduleMapper;
 import kr.co.storefamily.model.Member;
 import kr.co.storefamily.model.Schedule;
+import mapper.ScheduleMapper;
 
 @Service
 public class ScheduleServiceImpl implements ScheduleService {

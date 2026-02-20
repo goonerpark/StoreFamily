@@ -1,0 +1,63 @@
+@charset "UTF-8";
+
+@font-face {
+	src: url("../fonts/Cafe24Ssurround-v2.0.woff") format("woff");
+	font-family: "Cafe24Ssurround";
+}
+
+@font-face {
+	src: url("../fonts/Cafe24Supermagic-Bold-v1.0.woff") format("woff");
+	font-family: "Cafe24Supermagic-Bold";
+}
+@font-face {
+	src: url("../fonts/Cafe24Supermagic-Regular-v1.0.woff") format("woff");
+	font-family: "Cafe24Supermagic-Regular";
+}
+@font-face {
+	src: url("../fonts/esamanru Bold.woff") format("woff");
+	font-family: "esamanru Bold";
+}
+@font-face {
+	src: url("../fonts/esamanru Light.woff") format("woff");
+	font-family: "esamanru Light";
+}
+@font-face {
+	src: url("../fonts/esamanru Medium.woff") format("woff");
+	font-family: "esamanru Medium";
+}
+@font-face {
+	src: url("../fonts/GmarketSansTTFBold.woff") format("woff");
+	font-family: "GmarketSansTTFBold";
+}
+@font-face {
+	src: url("../fonts/GmarketSansTTFLight.woff") format("woff");
+	font-family: "GmarketSansTTFLight";
+}
+@font-face {
+	src: url("../fonts/GmarketSansTTFMedium.woff") format("woff");
+	font-family: "GmarketSansTTFMedium";
+}
+@font-face {
+	src: url("../fonts/MBC M.woff") format("woff");
+	font-family: "MBC M";
+}
+@font-face {
+	src: url("../fonts/MBC M2.woff") format("woff");
+	font-family: "MBC M2";
+}
+@font-face {
+	src: url("../fonts/PyeongChang-Bold.woff") format("woff");
+	font-family: "PyeongChang-Bold";
+}
+@font-face {
+	src: url("../fonts/PyeongChangPeace-Bold.woff") format("woff");
+	font-family: "PyeongChangPeace-Bold";
+}
+@font-face {
+	src: url("../fonts/PyeongChangPeace-Light.woff") format("woff");
+	font-family: "PyeongChangPeace-Light";
+}
+@font-face {
+	src: url("../fonts/PyeongChangPeace-Regular.woff") format("woff");
+	font-family: "PyeongChangPeace-Regular";
+}

@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import kr.co.storefamily.mapper.JoinMapper;
 import kr.co.storefamily.model.Field;
 import kr.co.storefamily.model.Local_Do;
 import kr.co.storefamily.model.Local_Si;
 import kr.co.storefamily.model.Member;
+import mapper.JoinMapper;
 
 @Service
 public class JoinServiceImpl implements JoinService{

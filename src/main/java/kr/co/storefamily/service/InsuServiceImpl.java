@@ -10,9 +10,9 @@ import org.springframework.stereotype.Service;
 import com.oreilly.servlet.MultipartRequest;
 import com.oreilly.servlet.multipart.DefaultFileRenamePolicy;
 
-import kr.co.storefamily.mapper.InsuMapper;
 import kr.co.storefamily.model.Insu;
 import kr.co.storefamily.model.Member;
+import mapper.InsuMapper;
 
 @Service
 public class InsuServiceImpl implements InsuService{

@@ -1,4 +1,4 @@
-package kr.co.storefamily.mapper;
+package mapper;
 
 import java.util.List;
 

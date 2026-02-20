@@ -10,9 +10,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import kr.co.storefamily.mapper.ManageMapper;
 import kr.co.storefamily.model.Employee_Invite;
 import kr.co.storefamily.model.Member;
+import mapper.ManageMapper;
 
 @Service
 public class ManageServiceImpl implements ManageService{
