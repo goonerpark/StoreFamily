@@ -9,7 +9,7 @@ import kr.co.storefamily.model.Field;
 import kr.co.storefamily.model.Local_Do;
 import kr.co.storefamily.model.Local_Si;
 import kr.co.storefamily.model.Member;
-import mapper.JoinMapper;
+import kr.co.storefamily.mapper.JoinMapper;
 
 @Service
 public class JoinServiceImpl implements JoinService{

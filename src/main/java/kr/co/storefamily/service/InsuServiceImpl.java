@@ -12,7 +12,7 @@ import com.oreilly.servlet.multipart.DefaultFileRenamePolicy;
 
 import kr.co.storefamily.model.Insu;
 import kr.co.storefamily.model.Member;
-import mapper.InsuMapper;
+import kr.co.storefamily.mapper.InsuMapper;
 
 @Service
 public class InsuServiceImpl implements InsuService{

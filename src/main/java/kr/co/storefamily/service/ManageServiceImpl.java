@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import kr.co.storefamily.model.Employee_Invite;
 import kr.co.storefamily.model.Member;
-import mapper.ManageMapper;
+import kr.co.storefamily.mapper.ManageMapper;
 
 @Service
 public class ManageServiceImpl implements ManageService{

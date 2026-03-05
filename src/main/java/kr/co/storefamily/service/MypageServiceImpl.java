@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import kr.co.storefamily.model.Insu;
 import kr.co.storefamily.model.Member;
 import kr.co.storefamily.model.Resume;
-import mapper.MypageMapper;
+import kr.co.storefamily.mapper.MypageMapper;
 
 @Service
 public class MypageServiceImpl implements MypageService {

@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import kr.co.storefamily.model.Member;
-import mapper.LoginMapper;
+import kr.co.storefamily.mapper.LoginMapper;
 
 @Service
 public class LoginServiceImpl implements LoginService{
