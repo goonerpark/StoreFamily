@@ -7,7 +7,16 @@
 		select * from member where id=#{id} and pwd=#{pwd}
 	</select>
 
-	<select id="getStore" parameterType="String" resultType="Member">
-		select * from store where code=#{code} and id=#{id}
+	<select id="getStoreByCeoBno" parameterType="int" resultType="Member">
+		select
+			store_id as table_name,
+			store_code as code,
+			store_name as bussiness,
+			store_address as bussinessaddress,
+			store_phone as bussinessnum
+		from store
+		where ceo_bno = #{ceoBno}
+		order by created_at desc
+		limit 1
 	</select>
 </mapper>

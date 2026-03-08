@@ -1,17 +1,14 @@
-package kr.co.storefamily.dto;
+﻿package kr.co.storefamily.dto;
 
 import javax.validation.constraints.NotBlank;
 
 public class LoginRequestDto {
 
-	@NotBlank(message = "ID is required.")
+	@NotBlank(message = "아이디는 필수 입력입니다.")
 	private String id;
 
-	@NotBlank(message = "Password is required.")
+	@NotBlank(message = "비밀번호는 필수 입력입니다.")
 	private String pwd;
-
-	@NotBlank(message = "Position is required.")
-	private String position;
 
 	public String getId() {
 		return id;
@@ -27,13 +24,5 @@ public class LoginRequestDto {
 
 	public void setPwd(String pwd) {
 		this.pwd = pwd;
-	}
-
-	public String getPosition() {
-		return position;
-	}
-
-	public void setPosition(String position) {
-		this.position = position;
 	}
 }

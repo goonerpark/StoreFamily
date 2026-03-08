@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import kr.co.storefamily.dto.CeoSignUpRequestDto;
 import kr.co.storefamily.dto.EmployeeSignUpRequestDto;
 import kr.co.storefamily.exception.DuplicateUserIdException;
 import kr.co.storefamily.exception.RegistrationException;
@@ -17,10 +16,7 @@ import kr.co.storefamily.model.Member;
 import kr.co.storefamily.repository.JoinRepository;
 
 @Service
-public class JoinServiceImpl implements JoinService{
-
-	private static final String POSITION_EMPLOYEE = "\uC9C1\uC6D0";
-	private static final String POSITION_CEO = "\uC0AC\uC7A5";
+public class JoinServiceImpl implements JoinService {
 
 	@Autowired
 	private JoinRepository joinRepository;
@@ -41,56 +37,28 @@ public class JoinServiceImpl implements JoinService{
 	}
 
 	@Override
-	public int getcode(String code) {
-		return joinRepository.findLastStoreCodeSuffix(code);
-	}
-
-	@Override
 	public int check_userid(String id) {
 		return joinRepository.countById(id);
 	}
 
 	@Override
-	public int member_join_ok(Member member) {
-		return joinRepository.insertMember(member);
-	}
-
-	@Override
-	public void store_join_ok(Member member) {
-		joinRepository.insertStore(member);
-	}
-
-	@Override
 	@Transactional
-	public void registerEmployee(EmployeeSignUpRequestDto requestDto) {
+	public void registerMember(EmployeeSignUpRequestDto requestDto) {
 		validateUniqueId(requestDto.getId());
-		Member member = toEmployeeMember(requestDto);
+		Member member = toMember(requestDto);
 		int inserted = joinRepository.insertMember(member);
 		if (inserted != 1) {
-			throw new RegistrationException("Employee registration failed.");
+			throw new RegistrationException("\uD68C\uC6D0\uAC00\uC785 \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
 		}
-	}
-
-	@Override
-	@Transactional
-	public void registerCeo(CeoSignUpRequestDto requestDto) {
-		validateUniqueId(requestDto.getId());
-		Member member = toCeoMember(requestDto);
-		int inserted = joinRepository.insertMember(member);
-		if (inserted != 1) {
-			throw new RegistrationException("CEO registration failed.");
-		}
-
-		joinRepository.insertStore(member);
 	}
 
 	private void validateUniqueId(String id) {
 		if (joinRepository.countById(id) > 0) {
-			throw new DuplicateUserIdException("Already used ID.");
+			throw new DuplicateUserIdException("\uC774\uBBF8 \uC0AC\uC6A9 \uC911\uC778 \uC544\uC774\uB514\uC785\uB2C8\uB2E4.");
 		}
 	}
 
-	private Member toEmployeeMember(EmployeeSignUpRequestDto requestDto) {
+	private Member toMember(EmployeeSignUpRequestDto requestDto) {
 		Member member = new Member();
 		member.setName(requestDto.getName());
 		member.setId(requestDto.getId());
@@ -101,39 +69,10 @@ public class JoinServiceImpl implements JoinService{
 		member.setAddress(requestDto.getAddress());
 		member.setAddress_etc(requestDto.getAddressEtc());
 		member.setPhone(requestDto.getPhone());
-		member.setCode(requestDto.getCode());
-		member.setChk(0);
-		member.setPosition(POSITION_EMPLOYEE);
-		return member;
-	}
-
-	private Member toCeoMember(CeoSignUpRequestDto requestDto) {
-		Member member = new Member();
-		member.setName(requestDto.getName());
-		member.setId(requestDto.getId());
-		member.setPwd(requestDto.getPwd());
-		member.setEmail(requestDto.getEmail());
-		member.setBth(formatBirthDate(requestDto.getBirthDate()));
-		member.setGender(requestDto.getGender());
-		member.setAddress(requestDto.getAddress());
-		member.setAddress_etc(requestDto.getAddressEtc());
-		member.setPhone(requestDto.getPhone());
-		member.setCode(requestDto.getCode());
-		member.setChk(1);
-		member.setPosition(POSITION_CEO);
-
-		member.setBussiness(requestDto.getBussiness());
-		member.setBussinessnum(requestDto.getBussinessnum());
-		member.setBussinessaddress(requestDto.getBussinessaddress());
-		member.setBussinessaddress_etc(requestDto.getBussinessaddressEtc());
-		member.setField(requestDto.getField());
-		member.setLocal_do(requestDto.getLocalDo());
-		member.setLocal_si(requestDto.getLocalSi());
 		return member;
 	}
 
 	private String formatBirthDate(String birthDate) {
 		return birthDate == null ? null : birthDate.replace("-", "/");
 	}
-
 }

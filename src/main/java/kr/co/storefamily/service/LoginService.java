@@ -7,5 +7,5 @@ public interface LoginService {
 
 	Member login(LoginRequestDto loginRequestDto);
 
-	Member getStore(String code, String id);
+	Member getStore(int ceoBno);
 }

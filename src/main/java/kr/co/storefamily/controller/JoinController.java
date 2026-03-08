@@ -18,10 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import kr.co.storefamily.dto.CeoSignUpRequestDto;
 import kr.co.storefamily.dto.EmployeeSignUpRequestDto;
 import kr.co.storefamily.model.Field;
-import kr.co.storefamily.model.Local_Do;
 import kr.co.storefamily.model.Local_Si;
 import kr.co.storefamily.service.JoinService;
 import net.nurigo.java_sdk.api.Message;
@@ -29,9 +27,6 @@ import net.nurigo.java_sdk.exceptions.CoolsmsException;
 
 @Controller
 public class JoinController {
-
-	private static final String POSITION_EMPLOYEE = "\uC9C1\uC6D0";
-	private static final String POSITION_CEO = "\uC0AC\uC7A5";
 
 	@Autowired
 	private JoinService joinService;
@@ -45,57 +40,50 @@ public class JoinController {
 	@Value("${sms.from.number:}")
 	private String smsFromNumber;
 
-	@GetMapping("join_main")
-	public String joinMain() {
-		return "Join/join_main";
-	}
-
-	@GetMapping("employee_join")
-	public String employeeJoin(Model model, @RequestParam(value = "code", required = false) String code) {
-		EmployeeSignUpRequestDto form = new EmployeeSignUpRequestDto();
-		if (code != null && !code.isEmpty()) {
-			form.setCode(code);
+	@GetMapping({ "join", "join_main" })
+	public String join(@ModelAttribute("joinRequest") EmployeeSignUpRequestDto joinRequest,
+			@RequestParam(value = "code", required = false) String code,
+			Model model) {
+		if (code != null && !code.trim().isEmpty()) {
+			model.addAttribute("inviteStoreCode", code.trim());
 		}
-		model.addAttribute("employeeJoinRequest", form);
 		return "Join/employee/employee_join";
 	}
 
-	@PostMapping("employee_join")
-	public String employeeJoinSubmit(
-			@ModelAttribute("employeeJoinRequest") @Valid EmployeeSignUpRequestDto employeeJoinRequest,
+	@PostMapping({ "join", "join_ok" })
+	public String joinSubmit(@ModelAttribute("joinRequest") @Valid EmployeeSignUpRequestDto joinRequest,
 			BindingResult bindingResult) {
 		if (bindingResult.hasErrors()) {
 			return "Join/employee/employee_join";
 		}
 
-		employeeJoinRequest.setPosition(POSITION_EMPLOYEE);
-		joinService.registerEmployee(employeeJoinRequest);
+		joinService.registerMember(joinRequest);
 		return "redirect:/login";
+	}
+
+	@GetMapping("employee_join")
+	public String employeeJoinLegacyRedirect() {
+		return "redirect:/join";
+	}
+
+	@PostMapping("employee_join")
+	public String employeeJoinLegacyPostRedirect() {
+		return "redirect:/join";
 	}
 
 	@GetMapping("ceo_join")
-	public String ceoJoin(Model model) {
-		model.addAttribute("ceoJoinRequest", new CeoSignUpRequestDto());
-		model.addAttribute("localDoList", joinService.local_do_list());
-		return "Join/ceo/ceo_join";
+	public String ceoJoinLegacyRedirect() {
+		return "redirect:/join";
 	}
 
 	@PostMapping("ceo_join")
-	public String ceoJoinSubmit(@ModelAttribute("ceoJoinRequest") @Valid CeoSignUpRequestDto ceoJoinRequest,
-			BindingResult bindingResult, Model model) {
-		if (bindingResult.hasErrors()) {
-			model.addAttribute("localDoList", joinService.local_do_list());
-			return "Join/ceo/ceo_join";
-		}
-
-		ceoJoinRequest.setPosition(POSITION_CEO);
-		joinService.registerCeo(ceoJoinRequest);
-		return "redirect:/login";
+	public String ceoJoinLegacyPostRedirect() {
+		return "redirect:/join";
 	}
 
 	@GetMapping("ceo_store_join")
 	public String ceoStoreJoinLegacyRedirect() {
-		return "redirect:/ceo_join";
+		return "redirect:/join";
 	}
 
 	@GetMapping("getlocal_si")
@@ -108,12 +96,6 @@ public class JoinController {
 	@ResponseBody
 	public List<Field> getField() {
 		return joinService.field_list();
-	}
-
-	@GetMapping("getcode")
-	@ResponseBody
-	public Integer getCode(@RequestParam("code") String code) {
-		return joinService.getcode(code);
 	}
 
 	@GetMapping("check_userid")
@@ -151,16 +133,6 @@ public class JoinController {
 			response.put("message", e.getMessage());
 		}
 		return response;
-	}
-
-	@ModelAttribute("employeePosition")
-	public String employeePosition() {
-		return POSITION_EMPLOYEE;
-	}
-
-	@ModelAttribute("ceoPosition")
-	public String ceoPosition() {
-		return POSITION_CEO;
 	}
 
 }

@@ -33,18 +33,8 @@ public class JoinRepositoryImpl implements JoinRepository {
 	}
 
 	@Override
-	public int findLastStoreCodeSuffix(String codePrefix) {
-		return joinMapper.getcode(codePrefix);
-	}
-
-	@Override
 	public int insertMember(Member member) {
 		return joinMapper.member_join_ok(member);
-	}
-
-	@Override
-	public void insertStore(Member member) {
-		joinMapper.store_join_ok(member);
 	}
 
 	@Override

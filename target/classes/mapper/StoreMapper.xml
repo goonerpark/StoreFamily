@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.storefamily.mapper.StoreMapper">
+
+	<select id="findMemberBnoById" resultType="int">
+		select bno from member where id = #{id}
+	</select>
+
+	<select id="countStoreId" resultType="int">
+		select count(*) from store where store_id = #{storeId}
+	</select>
+
+	<select id="countStoreCode" resultType="int">
+		select count(*) from store where store_code = #{storeCode}
+	</select>
+
+	<insert id="insertStore" parameterType="Store">
+		insert into store(store_id, store_code, store_name, store_address, store_phone, ceo_bno, created_at)
+		values(#{store_id}, #{store_code}, #{store_name}, #{store_address}, #{store_phone}, #{ceo_bno}, now())
+	</insert>
+
+	<insert id="insertStoreMember" parameterType="StoreMember">
+		insert into store_member(store_id, member_bno, position, chk, employment, health, rate, color)
+		values(#{store_id}, #{member_bno}, #{position}, #{chk}, #{employment}, #{health}, #{rate}, #{color})
+	</insert>
+
+	<select id="findStoresByCeoBno" resultType="Store">
+		select * from store where ceo_bno = #{ceoBno} order by created_at desc
+	</select>
+
+	<select id="findStoreByIdAndCeoBno" resultType="Store">
+		select * from store where store_id = #{storeId} and ceo_bno = #{ceoBno} limit 1
+	</select>
+
+	<select id="findStoreByStoreCode" resultType="Store">
+		select * from store where store_code = #{storeCode}
+	</select>
+
+	<select id="findStoreMember" resultType="StoreMember">
+		select * from store_member where store_id = #{storeId} and member_bno = #{memberBno} limit 1
+	</select>
+
+	<select id="findPendingJoinRequestsByStoreId" resultType="StoreJoinRequest">
+		select
+			sm.store_member_id,
+			sm.store_id,
+			sm.member_bno,
+			m.name,
+			m.email,
+			m.phone,
+			sm.position,
+			sm.chk,
+			sm.created_at
+		from store_member sm
+		join member m on sm.member_bno = m.bno
+		where sm.store_id = #{storeId}
+		  and sm.position = '직원'
+		  and sm.chk = 0
+		order by sm.store_member_id desc
+	</select>
+
+	<update id="approveStoreMember">
+		update store_member
+		set chk = 1
+		where store_member_id = #{storeMemberId}
+		  and store_id = #{storeId}
+		  and chk = 0
+	</update>
+
+	<delete id="rejectStoreMember">
+		delete from store_member
+		where store_member_id = #{storeMemberId}
+		  and store_id = #{storeId}
+		  and chk = 0
+	</delete>
+
+	<select id="findApprovedEmployeesByStoreId" resultType="StoreEmployee">
+		select
+			sm.store_member_id,
+			sm.store_id,
+			sm.member_bno,
+			m.name,
+			m.email,
+			m.phone,
+			sm.employment,
+			sm.health,
+			sm.rate,
+			sm.created_at
+		from store_member sm
+		join member m on sm.member_bno = m.bno
+		where sm.store_id = #{storeId}
+		  and sm.position = '직원'
+		  and sm.chk = 1
+		order by sm.store_member_id desc
+	</select>
+
+	<select id="findEmployeeDetail" resultType="StoreEmployee">
+		select
+			sm.store_member_id,
+			sm.store_id,
+			sm.member_bno,
+			m.name,
+			m.email,
+			m.phone,
+			sm.employment,
+			sm.health,
+			sm.rate,
+			sm.created_at
+		from store_member sm
+		join member m on sm.member_bno = m.bno
+		where sm.store_id = #{storeId}
+		  and sm.store_member_id = #{storeMemberId}
+		  and sm.position = '직원'
+		  and sm.chk = 1
+		limit 1
+	</select>
+
+</mapper>

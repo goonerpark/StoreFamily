@@ -15,18 +15,9 @@
 		select * from field order by bno asc;
 	</select>
 	
-	<select id="getcode" resultType="Integer">
-		select ifnull(substring(max(code),8,3),"0") from store where code like concat(#{code},'%')
-	</select>
-	
 	<insert id="member_join_ok" parameterType="Member">
-		insert into member(name,id,pwd,email,bth,gender,address,phone,address_etc,code,position,chk)
-		values(#{name},#{id},#{pwd},#{email},#{bth},#{gender},#{address},#{phone},#{address_etc},#{code},#{position},#{chk})
-	</insert>
-	
-	<insert id="store_join_ok" parameterType="Member">
-		insert into store(bussiness,bussinessnum,bussinessaddress,bussinessaddress_etc,field,local_do,local_si,code,id)
-		values(#{bussiness},#{bussinessnum},#{bussinessaddress},#{bussinessaddress_etc},#{field},#{local_do},#{local_si},#{code},#{id})
+		insert into member(name,id,pwd,email,bth,gender,address,address_etc,phone)
+		values(#{name},#{id},#{pwd},#{email},#{bth},#{gender},#{address},#{address_etc},#{phone})
 	</insert>
 	
 	<select id="check_userid" resultType="int">

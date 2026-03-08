@@ -17,11 +17,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import kr.co.storefamily.model.Fill;
 import kr.co.storefamily.model.Insu;
-import kr.co.storefamily.model.Local_Do;
-import kr.co.storefamily.model.Local_Si;
 import kr.co.storefamily.model.Member;
 import kr.co.storefamily.model.Resume;
-import kr.co.storefamily.service.JoinService;
 import kr.co.storefamily.service.MypageService;
 
 @Controller
@@ -30,9 +27,6 @@ public class MypageController {
 	@Autowired
 	private MypageService MypageService;
 	
-	@Autowired
-	private JoinService JoinService;
-
 	@RequestMapping(value="mypage_main")
 	public String mypage_main(HttpSession session, Model model) throws Exception {
 		String position = (String) session.getAttribute("position");
@@ -124,14 +118,16 @@ public class MypageController {
 	public String store_update(@RequestParam(value="code", required = false) String code, HttpSession session, Model model) throws Exception {
 		String id = (String) session.getAttribute("id");
 		List<Member> getStore_list = this.MypageService.getStore_list(id);
+		if (getStore_list == null || getStore_list.isEmpty()) {
+			model.addAttribute("message", "등록된 매장이 없습니다.");
+			return "Mypage/ceo/store_update";
+		}
 		model.addAttribute("getStore_list", getStore_list);
 		
 		if(code == null)
 			code=getStore_list.get(0).getCode();
 		Member store_imformation = this.MypageService.store_imformation(code);
 		
-		List<Local_Do> local_do = this.JoinService.local_do_list();
-		model.addAttribute("local_do", local_do);
 		model.addAttribute("store_imformation", store_imformation);
 		return "Mypage/ceo/store_update";
 	}
@@ -142,6 +138,6 @@ public class MypageController {
 		if(this.MypageService.store_update_ok(member) == 1)
 			return "redirect:/store_update?code="+ex_code;
 		else
-			return "redirect:/store_upate?code="+ex_code;
+			return "redirect:/store_update?code="+ex_code;
 	}
 }

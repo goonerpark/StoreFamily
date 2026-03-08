@@ -26,14 +26,36 @@
 	</update>
 	
 	<select id="getStore_list" resultType="Member">
-		select * from member where id=#{id}
+		select
+			store_id as table_name,
+			store_code as code,
+			store_name as bussiness,
+			store_address as bussinessaddress,
+			store_phone as bussinessnum
+		from store
+		where ceo_bno = (select bno from member where id = #{id})
+		order by created_at desc
 	</select>
 	
 	<select id="store_imformation" resultType="Member">
-		select * from store where code=#{code}
+		select
+			store_id as table_name,
+			store_code as code,
+			store_name as bussiness,
+			store_address as bussinessaddress,
+			'' as bussinessaddress_etc,
+			store_phone as bussinessnum
+		from store
+		where store_code = #{code}
+		limit 1
 	</select>
 	
 	<update id="store_update_ok" parameterType="Member">
-		update store set bussiness=#{bussiness}, bussinessaddress=#{bussinessaddress}, bussinessaddress_etc=#{bussinessaddress_etc} where bno=#{bno}
+		update store
+		set
+			store_name = #{bussiness},
+			store_address = concat(#{bussinessaddress}, ' ', ifnull(#{bussinessaddress_etc}, '')),
+			store_phone = #{bussinessnum}
+		where store_code = #{ex_code}
 	</update>
 </mapper>

@@ -18,7 +18,6 @@ import kr.co.storefamily.service.LoginService;
 @Controller
 public class LoginController {
 
-	private static final String POSITION_EMPLOYEE = "\uC9C1\uC6D0";
 	private static final String POSITION_CEO = "\uC0AC\uC7A5";
 
 	@Autowired
@@ -44,11 +43,11 @@ public class LoginController {
 			session.setAttribute("id", login.getId());
 
 			if (POSITION_CEO.equals(login.getPosition())) {
-				Member store = loginService.getStore(login.getCode(), login.getId());
+				Member store = loginService.getStore(login.getBno());
 				if (store != null) {
 					session.setAttribute("bussiness", store.getBussiness());
-					session.setAttribute("local_si", store.getLocal_si());
-					session.setAttribute("local_do", store.getLocal_do());
+					session.setAttribute("store_code", store.getCode());
+					session.setAttribute("store_id", store.getTable_name());
 				}
 			}
 			return "redirect:/main";
@@ -62,15 +61,5 @@ public class LoginController {
 	public String logout(HttpSession session) {
 		session.invalidate();
 		return "redirect:/login";
-	}
-
-	@ModelAttribute("employeePosition")
-	public String employeePosition() {
-		return POSITION_EMPLOYEE;
-	}
-
-	@ModelAttribute("ceoPosition")
-	public String ceoPosition() {
-		return POSITION_CEO;
 	}
 }

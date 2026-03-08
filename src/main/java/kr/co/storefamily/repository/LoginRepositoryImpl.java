@@ -18,7 +18,7 @@ public class LoginRepositoryImpl implements LoginRepository {
 	}
 
 	@Override
-	public Member findStore(String code, String id) {
-		return loginMapper.getStore(code, id);
+	public Member findLatestStoreByCeoBno(int ceoBno) {
+		return loginMapper.getStoreByCeoBno(ceoBno);
 	}
 }

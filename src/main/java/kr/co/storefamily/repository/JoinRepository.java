@@ -15,11 +15,7 @@ public interface JoinRepository {
 
 	List<Field> findAllField();
 
-	int findLastStoreCodeSuffix(String codePrefix);
-
 	int insertMember(Member member);
-
-	void insertStore(Member member);
 
 	int countById(String id);
 }

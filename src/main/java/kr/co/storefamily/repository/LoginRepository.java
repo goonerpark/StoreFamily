@@ -6,5 +6,5 @@ public interface LoginRepository {
 
 	Member findLoginMember(String id, String pwd);
 
-	Member findStore(String code, String id);
+	Member findLatestStoreByCeoBno(int ceoBno);
 }

@@ -8,65 +8,61 @@ import javax.validation.constraints.Size;
 
 public class CeoSignUpRequestDto {
 
-	@NotBlank(message = "Name is required.")
+	@NotBlank(message = "이름은 필수 입력입니다.")
 	private String name;
 
-	@NotBlank(message = "ID is required.")
-	@Size(min = 4, max = 20, message = "ID must be between 4 and 20 characters.")
+	@NotBlank(message = "아이디는 필수 입력입니다.")
+	@Size(min = 4, max = 20, message = "아이디는 4자 이상 20자 이하로 입력해 주세요.")
 	private String id;
 
-	@NotBlank(message = "Password is required.")
-	@Size(min = 4, max = 50, message = "Password must be at least 4 characters.")
+	@NotBlank(message = "비밀번호는 필수 입력입니다.")
+	@Size(min = 4, max = 50, message = "비밀번호는 4자 이상 입력해 주세요.")
 	private String pwd;
 
-	@NotBlank(message = "Confirm password is required.")
+	@NotBlank(message = "비밀번호 확인은 필수 입력입니다.")
 	private String confirmPwd;
 
-	@NotBlank(message = "Email is required.")
-	@Email(message = "Invalid email format.")
+	@NotBlank(message = "이메일은 필수 입력입니다.")
+	@Email(message = "이메일 형식이 올바르지 않습니다.")
 	private String email;
 
-	@NotBlank(message = "Birth date is required.")
+	@NotBlank(message = "생년월일은 필수 입력입니다.")
 	private String birthDate;
 
-	@NotBlank(message = "Gender is required.")
+	@NotBlank(message = "성별은 필수 입력입니다.")
 	private String gender;
 
-	@NotBlank(message = "Address is required.")
+	@NotBlank(message = "주소는 필수 입력입니다.")
 	private String address;
 
 	private String addressEtc;
 
-	@NotBlank(message = "Phone is required.")
-	@Pattern(regexp = "^[0-9\\-]{8,20}$", message = "Phone format is invalid.")
+	@NotBlank(message = "휴대폰 번호는 필수 입력입니다.")
+	@Pattern(regexp = "^[0-9\\-]{8,20}$", message = "휴대폰 번호 형식이 올바르지 않습니다.")
 	private String phone;
 
-	@NotBlank(message = "Business name is required.")
+	@NotBlank(message = "매장명은 필수 입력입니다.")
 	private String bussiness;
 
-	@NotBlank(message = "Business number is required.")
+	@NotBlank(message = "매장 전화번호는 필수 입력입니다.")
 	private String bussinessnum;
 
-	@NotBlank(message = "Business address is required.")
+	@NotBlank(message = "매장 주소는 필수 입력입니다.")
 	private String bussinessaddress;
 
 	private String bussinessaddressEtc;
 
-	@NotBlank(message = "Field is required.")
 	private String field;
 
-	@NotBlank(message = "Do is required.")
 	private String localDo;
 
-	@NotBlank(message = "Si is required.")
 	private String localSi;
 
-	@NotBlank(message = "Store code is required.")
 	private String code;
 
 	private String position;
 
-	@AssertTrue(message = "Password and confirm password do not match.")
+	@AssertTrue(message = "비밀번호와 비밀번호 확인이 일치하지 않습니다.")
 	public boolean isPasswordMatched() {
 		if (pwd == null || confirmPwd == null) {
 			return false;
