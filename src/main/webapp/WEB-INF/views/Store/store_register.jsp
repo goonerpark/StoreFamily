@@ -5,12 +5,15 @@
 <head>
 <meta charset="UTF-8">
 <title>매장 등록</title>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <style>
 	.store-wrap { max-width: 900px; margin: 30px auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
 	.store-wrap h2 { margin: 0 0 18px; }
 	.form-row { margin-bottom: 14px; }
 	.form-row label { display: block; margin-bottom: 6px; font-weight: 700; }
 	.form-row input { width: 100%; height: 38px; padding: 0 10px; box-sizing: border-box; }
+	.inline { display: flex; gap: 8px; align-items: center; }
+	.inline input { flex: 1; }
 	.msg { margin-bottom: 14px; padding: 10px; border-radius: 6px; background: #f6f6f6; }
 	.info-box { margin-top: 18px; padding: 12px; border: 1px solid #ddd; background: #fafafa; }
 	.btn-row { margin-top: 20px; }
@@ -20,6 +23,22 @@
 	th { background: #f2f2f2; }
 	.link-btn { display: inline-block; padding: 6px 10px; border: 1px solid #222; text-decoration: none; color: #222; }
 </style>
+<script>
+function searchStoreAddress() {
+	new daum.Postcode({
+		oncomplete: function(data) {
+			let addr = "";
+			if (data.userSelectedType === "R") {
+				addr = data.roadAddress;
+			} else {
+				addr = data.jibunAddress;
+			}
+			document.getElementById("store_address").value = "(" + data.zonecode + ") " + addr;
+			document.getElementById("store_address_detail").focus();
+		}
+	}).open();
+}
+</script>
 </head>
 <body>
 <div class="store-wrap">
@@ -36,7 +55,14 @@
 		</div>
 		<div class="form-row">
 			<label for="store_address">매장 주소</label>
-			<input type="text" id="store_address" name="store_address" value="${storeForm.store_address}" required>
+			<div class="inline">
+				<input type="text" id="store_address" name="store_address" value="${storeForm.store_address}" readonly required>
+				<button type="button" onclick="searchStoreAddress()">주소검색</button>
+			</div>
+		</div>
+		<div class="form-row">
+			<label for="store_address_detail">상세주소</label>
+			<input type="text" id="store_address_detail" name="store_address_detail" value="${storeAddressDetail}">
 		</div>
 		<div class="form-row">
 			<label for="store_phone">매장 전화번호</label>

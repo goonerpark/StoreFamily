@@ -1,46 +1,56 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-    pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<!DOCTYPE html>
 <html>
 <head>
-<title>Home</title>
-
-<link href="/resources/css/style.css" rel="stylesheet">
-<link rel="stylesheet" href="/resources/css/bootstrap.min.css">
-
-<script src="/resources/js/jquery-3.7.1.min.js"></script>
-<script src="/resources/js/bootstrap.min.js"></script>
-<script src="/resources/js/bootstrap.bundle.min.js"></script>
-
+<meta charset="UTF-8">
+<title>StoreFamily 홈</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/resources/css/bootstrap.min.css">
+<script src="${pageContext.request.contextPath}/resources/js/bootstrap.bundle.min.js"></script>
 <style>
-  body { margin: 0px; }
-  #head_up { width: 100%; height: 70px; position: relative; top: -5px; }
-  #store_change { margin-left: 800px; }
-  #logout { margin-left: 20px; }
-  .hr_solid { border: 0px; border-top: 2px solid #F1EFE7; margin-bottom: 0px; }
+body { margin: 0; }
+.topbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 2px solid #f1efe7;
+	background: #fff;
+}
+.logo-area img { width: 220px; cursor: pointer; }
+.actions { display: flex; gap: 8px; align-items: center; }
+.actions .name { font-weight: 600; margin-right: 6px; }
+.content { padding: 26px; }
 </style>
-
 <script>
-  function main() { location.href = "/home"; }
-  function login() { location.href = "/login"; }
-  function join_main() { location.href = "/join_main"; }
+function goHome() { location.href = "${pageContext.request.contextPath}/home"; }
+function goLogin() { location.href = "${pageContext.request.contextPath}/login"; }
+function goJoin() { location.href = "${pageContext.request.contextPath}/join"; }
+function doLogout() { location.href = "${pageContext.request.contextPath}/logout"; }
 </script>
 </head>
-
 <body>
-  <div id="head_up">
-    <span id="logo" onclick="main()">
-      <img src="/resources/img/logo.png" width="250">
-    </span>
+	<div class="topbar">
+		<div class="logo-area" onclick="goHome()">
+			<img src="${pageContext.request.contextPath}/resources/img/logo.png" alt="StoreFamily 로고">
+		</div>
+		<div class="actions">
+			<c:choose>
+				<c:when test="${empty sessionScope.id}">
+					<button type="button" class="btn btn-outline-dark btn-sm" onclick="goLogin()">로그인</button>
+					<button type="button" class="btn btn-outline-dark btn-sm" onclick="goJoin()">회원가입</button>
+				</c:when>
+				<c:otherwise>
+					<span class="name">${sessionScope.name}님</span>
+					<button type="button" class="btn btn-outline-danger btn-sm" onclick="doLogout()">로그아웃</button>
+				</c:otherwise>
+			</c:choose>
+		</div>
+	</div>
 
-    <span id="store_change">
-      <button type="button" class="btn btn-outline-dark btn-sm" onclick="login()">로그인</button>
-    </span>
-
-    <span id="logout">
-      <button type="button" class="btn btn-outline-dark btn-sm" onclick="join_main()">회원가입</button>
-    </span>
-  </div>
-
-  <hr class="hr_solid">
+	<div class="content">
+		<h2>StoreFamily</h2>
+		<p>매장 관리와 커뮤니티 기능을 시작하려면 로그인해 주세요.</p>
+	</div>
 </body>
 </html>

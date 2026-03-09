@@ -1,7 +1,9 @@
 package kr.co.storefamily.controller;
 
 import java.security.SecureRandom;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import javax.servlet.http.HttpSession;
 
@@ -48,8 +50,9 @@ public class StoreController {
 
 	@PostMapping("/store/register")
 	@Transactional
-	public String storeRegisterSubmit(@ModelAttribute("storeForm") Store storeForm, HttpSession session, Model model,
-			RedirectAttributes redirectAttributes) {
+	public String storeRegisterSubmit(@ModelAttribute("storeForm") Store storeForm,
+			@RequestParam(value = "store_address_detail", required = false) String storeAddressDetail,
+			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
 		Integer ceoBno = getLoginMemberBno(session, redirectAttributes);
 		if (ceoBno == null) {
 			return "redirect:/login";
@@ -58,6 +61,7 @@ public class StoreController {
 		if (isBlank(storeForm.getStore_name()) || isBlank(storeForm.getStore_address()) || isBlank(storeForm.getStore_phone())) {
 			model.addAttribute("message", "\uB9E4\uC7A5\uBA85, \uB9E4\uC7A5 \uC8FC\uC18C, \uB9E4\uC7A5 \uC804\uD654\uBC88\uD638\uB97C \uBAA8\uB450 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
 			model.addAttribute("storeForm", storeForm);
+			model.addAttribute("storeAddressDetail", storeAddressDetail);
 			model.addAttribute("myStores", storeMapper.findStoresByCeoBno(ceoBno));
 			return "Store/store_register";
 		}
@@ -69,7 +73,7 @@ public class StoreController {
 		store.setStore_id(storeId);
 		store.setStore_code(storeCode);
 		store.setStore_name(storeForm.getStore_name());
-		store.setStore_address(storeForm.getStore_address());
+		store.setStore_address(mergeAddress(storeForm.getStore_address(), storeAddressDetail));
 		store.setStore_phone(storeForm.getStore_phone());
 		store.setCeo_bno(ceoBno);
 
@@ -82,6 +86,10 @@ public class StoreController {
 		ceoStoreMember.setMember_bno(ceoBno);
 		ceoStoreMember.setPosition(POSITION_CEO);
 		ceoStoreMember.setChk(1);
+		ceoStoreMember.setEmployment(null);
+		ceoStoreMember.setHealth(null);
+		ceoStoreMember.setRate(null);
+		ceoStoreMember.setColor(null);
 
 		if (storeMapper.insertStoreMember(ceoStoreMember) != 1) {
 			throw new IllegalStateException("\uB9E4\uC7A5 \uC18C\uC18D \uC815\uBCF4 \uC0DD\uC131\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
@@ -94,7 +102,9 @@ public class StoreController {
 	}
 
 	@GetMapping("/store/my")
-	public String myStores(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+	public String myStores(@RequestParam(value = "q", required = false) String q,
+			@RequestParam(value = "sort", required = false, defaultValue = "latest") String sort,
+			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
 		Integer ceoBno = getLoginMemberBno(session, redirectAttributes);
 		if (ceoBno == null) {
 			return "redirect:/login";
@@ -106,7 +116,25 @@ public class StoreController {
 			return "redirect:/store/register";
 		}
 
+		String keyword = q == null ? "" : q.trim();
+		if (!keyword.isEmpty()) {
+			String lowered = keyword.toLowerCase(Locale.ROOT);
+			myStores.removeIf(store -> !containsIgnoreCase(store.getStore_name(), lowered)
+					&& !containsIgnoreCase(store.getStore_code(), lowered)
+					&& !containsIgnoreCase(store.getStore_address(), lowered));
+		}
+
+		if ("name_asc".equals(sort)) {
+			myStores.sort(Comparator.comparing(store -> defaultString(store.getStore_name())));
+		} else if ("name_desc".equals(sort)) {
+			myStores.sort(Comparator.comparing((Store store) -> defaultString(store.getStore_name())).reversed());
+		} else {
+			sort = "latest";
+		}
+
 		model.addAttribute("myStores", myStores);
+		model.addAttribute("q", keyword);
+		model.addAttribute("sort", sort);
 		return "Store/store_my";
 	}
 
@@ -172,6 +200,10 @@ public class StoreController {
 		storeMember.setMember_bno(memberBno);
 		storeMember.setPosition(POSITION_EMPLOYEE);
 		storeMember.setChk(0);
+		storeMember.setEmployment(null);
+		storeMember.setHealth(null);
+		storeMember.setRate(null);
+		storeMember.setColor(null);
 
 		if (storeMapper.insertStoreMember(storeMember) != 1) {
 			throw new IllegalStateException("\uB9E4\uC7A5 \uAC00\uC785 \uC694\uCCAD \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
@@ -327,5 +359,20 @@ public class StoreController {
 
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
+	}
+
+	private boolean containsIgnoreCase(String value, String loweredKeyword) {
+		return value != null && value.toLowerCase(Locale.ROOT).contains(loweredKeyword);
+	}
+
+	private String defaultString(String value) {
+		return value == null ? "" : value;
+	}
+
+	private String mergeAddress(String baseAddress, String detailAddress) {
+		if (isBlank(detailAddress)) {
+			return baseAddress;
+		}
+		return baseAddress + " " + detailAddress.trim();
 	}
 }

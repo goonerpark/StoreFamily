@@ -6,6 +6,7 @@
 <head>
 <meta charset="UTF-8">
 <title>회원가입</title>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <style>
 body { font-family: Arial, sans-serif; max-width: 720px; margin: 40px auto; }
 .card { border: 1px solid #ddd; border-radius: 8px; padding: 24px; }
@@ -15,6 +16,7 @@ input, select { width: 100%; padding: 8px; box-sizing: border-box; }
 .inline { display: flex; gap: 8px; align-items: center; }
 .inline input { flex: 1; }
 .error { color: #b00020; font-size: 13px; display: block; margin-top: 4px; }
+.guide { margin-bottom: 12px; padding: 10px; background: #f6f6f6; border-radius: 6px; }
 </style>
 <script>
 function checkUserId() {
@@ -23,7 +25,7 @@ function checkUserId() {
 		alert("아이디를 먼저 입력해 주세요.");
 		return;
 	}
-	fetch("check_userid?id=" + encodeURIComponent(id))
+	fetch("${pageContext.request.contextPath}/check_userid?id=" + encodeURIComponent(id))
 		.then(res => res.text())
 		.then(count => {
 			if (parseInt(count, 10) > 0) {
@@ -37,7 +39,7 @@ function checkUserId() {
 
 function requestPhoneCode() {
 	const phone = document.getElementById("phone").value;
-	fetch("phoneCheck?phone=" + encodeURIComponent(phone))
+	fetch("${pageContext.request.contextPath}/phoneCheck?phone=" + encodeURIComponent(phone))
 		.then(res => res.json())
 		.then(data => {
 			document.getElementById("expectedCode").value = data.code;
@@ -57,17 +59,34 @@ function verifyPhoneCode() {
 	alert("인증번호가 올바르지 않습니다.");
 	document.getElementById("phoneVerified").value = "N";
 }
+
+function jusoSearch() {
+	new daum.Postcode({
+		oncomplete: function(data) {
+			let addr = "";
+			if (data.userSelectedType === "R") {
+				addr = data.roadAddress;
+			} else {
+				addr = data.jibunAddress;
+			}
+			document.getElementById("address").value = "(" + data.zonecode + ") " + addr;
+			document.getElementById("addressEtc").focus();
+		}
+	}).open();
+}
 </script>
 </head>
 <body>
 	<div class="card">
 		<h2>회원가입</h2>
+
 		<c:if test="${not empty inviteStoreCode}">
-			<p style="margin-bottom:12px; padding:10px; background:#f6f6f6; border-radius:6px;">
+			<p class="guide">
 				초대받은 매장 코드: <b>${inviteStoreCode}</b><br>
 				회원가입 후 로그인하여 <b>매장 가입</b> 메뉴에서 위 코드를 입력해 주세요.
 			</p>
 		</c:if>
+
 		<form:form modelAttribute="joinRequest" method="post" action="${pageContext.request.contextPath}/join">
 			<form:errors cssClass="error" />
 
@@ -122,12 +141,15 @@ function verifyPhoneCode() {
 
 			<div class="row">
 				<label for="address">주소</label>
-				<form:input path="address" id="address" />
+				<div class="inline">
+					<form:input path="address" id="address" readonly="true" />
+					<button type="button" onclick="jusoSearch()">주소검색</button>
+				</div>
 				<form:errors path="address" cssClass="error" />
 			</div>
 
 			<div class="row">
-				<label for="addressEtc">상세 주소</label>
+				<label for="addressEtc">상세주소</label>
 				<form:input path="addressEtc" id="addressEtc" />
 			</div>
 

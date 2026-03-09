@@ -12,6 +12,9 @@
 	th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
 	th { background: #f2f2f2; }
 	.link-btn { display: inline-block; padding: 6px 10px; border: 1px solid #222; text-decoration: none; color: #222; }
+	.filter { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+	.filter input, .filter select { height: 36px; padding: 0 10px; box-sizing: border-box; }
+	.filter button { height: 36px; padding: 0 12px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -22,9 +25,19 @@
 		<div class="msg">${message}</div>
 	</c:if>
 
+	<form class="filter" action="${pageContext.request.contextPath}/store/my" method="get">
+		<input type="text" name="q" value="${q}" placeholder="매장명, 코드, 주소 검색">
+		<select name="sort">
+			<option value="latest" ${sort eq 'latest' ? 'selected' : ''}>최신 등록순</option>
+			<option value="name_asc" ${sort eq 'name_asc' ? 'selected' : ''}>매장명 오름차순</option>
+			<option value="name_desc" ${sort eq 'name_desc' ? 'selected' : ''}>매장명 내림차순</option>
+		</select>
+		<button type="submit">적용</button>
+	</form>
+
 	<c:choose>
 		<c:when test="${empty myStores}">
-			<p>등록한 매장이 없습니다.</p>
+			<p>조건에 맞는 매장이 없습니다.</p>
 		</c:when>
 		<c:otherwise>
 			<table>
