@@ -37,6 +37,7 @@ public class LoginController {
 
 		try {
 			Member login = loginService.login(loginRequest);
+			session.setMaxInactiveInterval(60 * 60 * 2);
 			session.setAttribute("name", login.getName());
 			session.setAttribute("position", login.getPosition());
 			session.setAttribute("code", login.getCode());

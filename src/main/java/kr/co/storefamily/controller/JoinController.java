@@ -86,6 +86,11 @@ public class JoinController {
 		return "redirect:/join";
 	}
 
+	@GetMapping("signup")
+	public String signUpRedirect() {
+		return "redirect:/join";
+	}
+
 	@GetMapping("getlocal_si")
 	@ResponseBody
 	public List<Local_Si> getLocalSi(@RequestParam("local_do_code") String localDoCode) {

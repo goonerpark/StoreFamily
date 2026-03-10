@@ -150,6 +150,23 @@ public class StoreController {
 		return "Store/store_manage";
 	}
 
+	@GetMapping("/store/approval/select")
+	public String storeApprovalSelect(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+		Integer ceoBno = getLoginMemberBno(session, redirectAttributes);
+		if (ceoBno == null) {
+			return "redirect:/login";
+		}
+
+		List<Store> myStores = storeMapper.findStoresByCeoBno(ceoBno);
+		if (myStores.isEmpty()) {
+			redirectAttributes.addFlashAttribute("message", "등록한 매장이 없습니다. 먼저 매장을 등록해 주세요.");
+			return "redirect:/store/register";
+		}
+
+		model.addAttribute("myStores", myStores);
+		return "Store/store_approval_select";
+	}
+
 	@GetMapping("/store/join")
 	public String storeJoinForm(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
 		if (getLoginMemberBno(session, redirectAttributes) == null) {

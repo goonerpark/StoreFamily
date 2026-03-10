@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class MainController {
 
 	@RequestMapping(value = "store_main")
-	public String store_main(HttpSession session) {
+	public String storeMain(HttpSession session) {
 		String position = (String) session.getAttribute("position");
 		if ("직원".equals(position)) {
 			return "/store_main/employee_store_main";
@@ -17,11 +17,11 @@ public class MainController {
 		if ("사장".equals(position)) {
 			return "/store_main/ceo_store_main";
 		}
-		return "redirect:/main";
+		return "redirect:/home";
 	}
 
 	@RequestMapping(value = "/main")
 	public String main() {
-		return "/main";
+		return "redirect:/home";
 	}
 }
