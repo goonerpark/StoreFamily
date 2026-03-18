@@ -27,63 +27,6 @@ body {
 a { color: inherit; text-decoration: none; }
 .container { width: min(1180px, 92vw); margin: 0 auto; }
 
-.topbar {
-	position: sticky;
-	top: 0;
-	z-index: 20;
-	background: rgba(255, 255, 255, 0.9);
-	backdrop-filter: blur(8px);
-	border-bottom: 1px solid var(--line);
-}
-.topbar-inner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	height: 72px;
-}
-.brand { cursor: pointer; }
-.brand img { width: 220px; display: block; }
-.menu { display: flex; gap: 22px; font-weight: 600; align-items: center; }
-.menu > a, .menu > .menu-group > .menu-trigger { color: var(--muted); }
-.menu > a:hover, .menu > .menu-group > .menu-trigger:hover { color: var(--text); }
-.menu-group { position: relative; }
-.menu-trigger {
-	background: transparent;
-	border: none;
-	padding: 0;
-	margin: 0;
-	font: inherit;
-	font-weight: 600;
-	cursor: pointer;
-}
-.submenu {
-	display: none;
-	position: absolute;
-	top: 28px;
-	left: 0;
-	min-width: 170px;
-	background: #fff;
-	border: 1px solid var(--line);
-	border-radius: 10px;
-	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-	padding: 6px;
-}
-.submenu a {
-	display: block;
-	padding: 8px 10px;
-	border-radius: 8px;
-	font-size: .92rem;
-}
-.submenu a:hover { background: #f7f1ea; }
-.menu-group.open .submenu { display: block; }
-
-.auth { display: flex; align-items: center; gap: 10px; }
-.name-chip {
-	padding: 8px 12px;
-	border-radius: 999px;
-	background: var(--chip);
-	font-weight: 700;
-}
 .btn {
 	border: 1px solid var(--line);
 	background: #fff;
@@ -99,27 +42,6 @@ a { color: inherit; text-decoration: none; }
 	color: #fff;
 }
 .btn-primary:hover { background: var(--brand-dark); }
-.hamburger {
-	display: none;
-	border: 1px solid var(--line);
-	background: #fff;
-	border-radius: 8px;
-	padding: 7px 10px;
-	cursor: pointer;
-}
-.mobile-nav {
-	display: none;
-	padding: 12px 0 16px;
-	border-top: 1px solid var(--line);
-}
-.mobile-nav.open { display: block; }
-.mobile-nav a {
-	display: block;
-	padding: 10px 6px;
-	color: var(--muted);
-	font-weight: 600;
-}
-
 .layout {
 	display: grid;
 	grid-template-columns: 1fr 320px;
@@ -193,91 +115,15 @@ footer {
 	.cards { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 760px) {
-	.menu, .auth.desktop { display: none; }
-	.hamburger { display: inline-block; }
 	.cards { grid-template-columns: 1fr; }
 	.banner h1 { font-size: 1.45rem; }
 }
 </style>
 <script>
 function go(path) { location.href = "${pageContext.request.contextPath}" + path; }
-function toggleMobileMenu() {
-	const nav = document.getElementById("mobileNav");
-	nav.classList.toggle("open");
-}
-function toggleStoreMenu(event) {
-	event.stopPropagation();
-	const group = document.getElementById("storeManageGroup");
-	group.classList.toggle("open");
-}
-document.addEventListener("click", function(event) {
-	const group = document.getElementById("storeManageGroup");
-	if (!group) return;
-	if (!group.contains(event.target)) {
-		group.classList.remove("open");
-	}
-});
 </script>
 </head>
 <body>
-	<header class="topbar">
-		<div class="container topbar-inner">
-			<div class="brand" onclick="go('/home')">
-				<img src="${pageContext.request.contextPath}/resources/img/logo.png" alt="storefamily 로고">
-			</div>
-
-			<nav class="menu">
-				<a href="${pageContext.request.contextPath}/home">홈</a>
-				<a href="${pageContext.request.contextPath}/fill_all_list">대타 구인</a>
-				<a href="${pageContext.request.contextPath}/store/register">매장 등록</a>
-				<a href="${pageContext.request.contextPath}/store/join">매장 가입</a>
-				<c:if test="${not empty sessionScope.id}">
-					<div class="menu-group" id="storeManageGroup">
-						<button type="button" class="menu-trigger" onclick="toggleStoreMenu(event)">내 매장관리</button>
-						<div class="submenu">
-							<a href="${pageContext.request.contextPath}/store/my">내 매장목록</a>
-							<a href="${pageContext.request.contextPath}/store/approval/select">가입승인관리</a>
-						</div>
-					</div>
-				</c:if>
-			</nav>
-
-			<div class="auth desktop">
-				<c:choose>
-					<c:when test="${empty sessionScope.id}">
-						<button class="btn" onclick="go('/login')">로그인</button>
-						<button class="btn btn-primary" onclick="go('/signup')">회원가입</button>
-					</c:when>
-					<c:otherwise>
-						<span class="name-chip">${sessionScope.name}님</span>
-						<button class="btn" onclick="go('/logout')">로그아웃</button>
-					</c:otherwise>
-				</c:choose>
-			</div>
-			<button class="hamburger" onclick="toggleMobileMenu()">메뉴</button>
-		</div>
-
-		<div class="container mobile-nav" id="mobileNav">
-			<a href="${pageContext.request.contextPath}/home">홈</a>
-			<a href="${pageContext.request.contextPath}/fill_all_list">대타 구인</a>
-			<a href="${pageContext.request.contextPath}/store/register">매장 등록</a>
-			<a href="${pageContext.request.contextPath}/store/join">매장 가입</a>
-			<c:if test="${not empty sessionScope.id}">
-				<a href="${pageContext.request.contextPath}/store/my">내 매장목록</a>
-				<a href="${pageContext.request.contextPath}/store/approval/select">가입승인관리</a>
-			</c:if>
-			<c:choose>
-				<c:when test="${empty sessionScope.id}">
-					<a href="${pageContext.request.contextPath}/login">로그인</a>
-					<a href="${pageContext.request.contextPath}/signup">회원가입</a>
-				</c:when>
-				<c:otherwise>
-					<a href="${pageContext.request.contextPath}/logout">로그아웃</a>
-				</c:otherwise>
-			</c:choose>
-		</div>
-	</header>
-
 	<main class="container layout">
 		<section>
 			<div class="banner">

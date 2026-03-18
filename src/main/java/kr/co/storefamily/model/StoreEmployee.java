@@ -4,13 +4,22 @@ public class StoreEmployee {
 	private Integer store_member_id;
 	private String store_id;
 	private Integer member_bno;
+	private String member_id;
 	private String name;
 	private String email;
 	private String phone;
+	private String gender;
+	private String bth;
+	private String address;
+	private String address_etc;
+	private String position;
+	private Integer chk;
 	private String employment;
 	private String health;
 	private String rate;
 	private String created_at;
+	private String store_name;
+	private String store_code;
 
 	public Integer getStore_member_id() {
 		return store_member_id;
@@ -44,6 +53,14 @@ public class StoreEmployee {
 		this.name = name;
 	}
 
+	public String getMember_id() {
+		return member_id;
+	}
+
+	public void setMember_id(String member_id) {
+		this.member_id = member_id;
+	}
+
 	public String getEmail() {
 		return email;
 	}
@@ -58,6 +75,54 @@ public class StoreEmployee {
 
 	public void setPhone(String phone) {
 		this.phone = phone;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public String getBth() {
+		return bth;
+	}
+
+	public void setBth(String bth) {
+		this.bth = bth;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getAddress_etc() {
+		return address_etc;
+	}
+
+	public void setAddress_etc(String address_etc) {
+		this.address_etc = address_etc;
+	}
+
+	public String getPosition() {
+		return position;
+	}
+
+	public void setPosition(String position) {
+		this.position = position;
+	}
+
+	public Integer getChk() {
+		return chk;
+	}
+
+	public void setChk(Integer chk) {
+		this.chk = chk;
 	}
 
 	public String getEmployment() {
@@ -90,5 +155,21 @@ public class StoreEmployee {
 
 	public void setCreated_at(String created_at) {
 		this.created_at = created_at;
+	}
+
+	public String getStore_name() {
+		return store_name;
+	}
+
+	public void setStore_name(String store_name) {
+		this.store_name = store_name;
+	}
+
+	public String getStore_code() {
+		return store_code;
+	}
+
+	public void setStore_code(String store_code) {
+		this.store_code = store_code;
 	}
 }

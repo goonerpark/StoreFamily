@@ -1,14 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <decorators defaultdir="/WEB-INF/views/sitemesh">
-	<!-- 데코레이터 예외 페이지 -->
-	<excludes>
-		<pattern>/home</pattern>
-		<pattern>/login</pattern>
-		<pattern>/login_ok</pattern>
-	</excludes>
-
 	<!-- 기본 데코레이터 -->
 	<decorator name="default" page="default.jsp">
+		<pattern>/*</pattern>
 		<pattern>*</pattern>
 	</decorator>
 </decorators>

@@ -6,73 +6,93 @@
 <meta charset="UTF-8">
 <title>가입 승인 관리</title>
 <style>
-	.wrap { max-width: 1080px; margin: 30px auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-	.msg { margin-bottom: 14px; padding: 10px; border-radius: 6px; background: #f6f6f6; }
-	table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-	th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-	th { background: #f2f2f2; }
-	.actions { display: flex; gap: 8px; justify-content: center; }
-	.actions button { padding: 6px 10px; cursor: pointer; }
-	.top-actions { margin-top: 12px; }
-	.top-actions a { display: inline-block; padding: 8px 12px; border: 1px solid #222; text-decoration: none; color: #222; }
+	:root {
+		--bg: #f6f7fb;
+		--card: #ffffff;
+		--line: #e4e7ec;
+		--text: #1f2937;
+		--muted: #6b7280;
+		--point: #1f6feb;
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; background: var(--bg); color: var(--text); font-family: "GmarketSansTTFMedium", "Malgun Gothic", sans-serif; }
+	.wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 40px; }
+	.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; overflow-x: auto; }
+	.page-header { margin-bottom: 14px; }
+	.page-title { margin: 0; font-size: 30px; }
+	.page-sub { margin-top: 8px; color: var(--muted); }
+	.msg { margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: #eef4ff; color: #1f3f7f; }
+	table { width: 100%; border-collapse: collapse; min-width: 760px; }
+	th, td { border-bottom: 1px solid var(--line); padding: 12px 10px; text-align: left; font-size: 14px; }
+	th { color: var(--muted); font-size: 13px; background: #fafbfe; }
+	.actions { display: flex; gap: 8px; }
+	.actions button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 700; }
+	.actions button:hover { border-color: var(--point); color: var(--point); }
+	.empty { padding: 24px 6px; color: var(--muted); }
+	@media (max-width: 760px) {
+		.wrap { padding: 18px 14px 26px; }
+		.page-title { font-size: 26px; }
+	}
 </style>
 </head>
 <body>
 <div class="wrap">
-	<h2>가입 승인 관리</h2>
-	<p>매장명: ${myStore.store_name}</p>
-	<p>매장 코드: ${myStore.store_code}</p>
-
-	<div class="top-actions">
-		<a href="${pageContext.request.contextPath}/store/manage?storeId=${myStore.store_id}">매장 관리로 돌아가기</a>
+	<div class="page-header">
+		<h1 class="page-title">가입 승인 관리</h1>
+		<div class="page-sub">
+			<strong><c:out value="${myStore.store_name}"/></strong>
+			(<c:out value="${myStore.store_code}"/>)
+		</div>
 	</div>
 
 	<c:if test="${not empty message}">
 		<div class="msg">${message}</div>
 	</c:if>
 
-	<c:choose>
-		<c:when test="${empty pendingRequests}">
-			<p>현재 승인 대기 중인 요청이 없습니다.</p>
-		</c:when>
-		<c:otherwise>
-			<table>
-				<thead>
-				<tr>
-					<th>이름</th>
-					<th>이메일</th>
-					<th>전화번호</th>
-					<th>요청일</th>
-					<th>처리</th>
-				</tr>
-				</thead>
-				<tbody>
-				<c:forEach var="req" items="${pendingRequests}">
+	<div class="card">
+		<c:choose>
+			<c:when test="${empty pendingRequests}">
+				<div class="empty">현재 승인 대기 중인 요청이 없습니다.</div>
+			</c:when>
+			<c:otherwise>
+				<table>
+					<thead>
 					<tr>
-						<td>${req.name}</td>
-						<td>${req.email}</td>
-						<td>${req.phone}</td>
-						<td>${req.created_at}</td>
-						<td>
-							<div class="actions">
-								<form action="${pageContext.request.contextPath}/store/approval/approve" method="post">
-									<input type="hidden" name="storeId" value="${myStore.store_id}">
-									<input type="hidden" name="storeMemberId" value="${req.store_member_id}">
-									<button type="submit">승인</button>
-								</form>
-								<form action="${pageContext.request.contextPath}/store/approval/reject" method="post">
-									<input type="hidden" name="storeId" value="${myStore.store_id}">
-									<input type="hidden" name="storeMemberId" value="${req.store_member_id}">
-									<button type="submit" onclick="return confirm('해당 가입 요청을 거절하시겠습니까?');">거절</button>
-								</form>
-							</div>
-						</td>
+						<th>이름</th>
+						<th>이메일</th>
+						<th>전화번호</th>
+						<th>요청일</th>
+						<th>처리</th>
 					</tr>
-				</c:forEach>
-				</tbody>
-			</table>
-		</c:otherwise>
-	</c:choose>
+					</thead>
+					<tbody>
+					<c:forEach var="req" items="${pendingRequests}">
+						<tr>
+							<td><c:out value="${req.name}"/></td>
+							<td><c:out value="${req.email}"/></td>
+							<td><c:out value="${req.phone}"/></td>
+							<td><c:out value="${req.created_at}"/></td>
+							<td>
+								<div class="actions">
+									<form action="${pageContext.request.contextPath}/store/approval/approve" method="post">
+										<input type="hidden" name="storeId" value="${myStore.store_id}">
+										<input type="hidden" name="storeMemberId" value="${req.store_member_id}">
+										<button type="submit">승인</button>
+									</form>
+									<form action="${pageContext.request.contextPath}/store/approval/reject" method="post">
+										<input type="hidden" name="storeId" value="${myStore.store_id}">
+										<input type="hidden" name="storeMemberId" value="${req.store_member_id}">
+										<button type="submit" onclick="return confirm('해당 가입 요청을 거절하시겠습니까?');">거절</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					</c:forEach>
+					</tbody>
+				</table>
+			</c:otherwise>
+		</c:choose>
+	</div>
 </div>
 </body>
 </html>

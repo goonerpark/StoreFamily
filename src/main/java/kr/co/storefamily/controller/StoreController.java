@@ -1,6 +1,8 @@
 package kr.co.storefamily.controller;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -13,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import kr.co.storefamily.dto.StoreDashboardView;
 import kr.co.storefamily.mapper.StoreMapper;
 import kr.co.storefamily.model.Store;
 import kr.co.storefamily.model.StoreEmployee;
@@ -138,14 +142,26 @@ public class StoreController {
 		return "Store/store_my";
 	}
 
+	@GetMapping("/my-stores")
+	public String myStoresAlias() {
+		return "redirect:/store/my";
+	}
+
 	@GetMapping("/store/manage")
-	public String storeManage(@RequestParam("storeId") String storeId, HttpSession session, Model model,
+	public String storeManage(@RequestParam("storeId") String storeId) {
+		return "redirect:/stores/" + storeId;
+	}
+
+	@GetMapping("/stores/{storeId}")
+	public String storeDashboard(@PathVariable("storeId") String storeId, HttpSession session, Model model,
 			RedirectAttributes redirectAttributes) {
 		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
 		if (ownedStore == null) {
 			return "redirect:/store/my";
 		}
 
+		StoreDashboardView dashboard = buildDashboardView(ownedStore);
+		model.addAttribute("dashboard", dashboard);
 		model.addAttribute("myStore", ownedStore);
 		return "Store/store_manage";
 	}
@@ -233,6 +249,17 @@ public class StoreController {
 	@GetMapping("/store/approval")
 	public String storeApprovalPage(@RequestParam("storeId") String storeId, HttpSession session, Model model,
 			RedirectAttributes redirectAttributes) {
+		return storeApprovalPageByStoreId(storeId, session, model, redirectAttributes);
+	}
+
+	@GetMapping("/stores/{storeId}/approvals")
+	public String storeApprovalPageByPath(@PathVariable("storeId") String storeId, HttpSession session, Model model,
+			RedirectAttributes redirectAttributes) {
+		return storeApprovalPageByStoreId(storeId, session, model, redirectAttributes);
+	}
+
+	private String storeApprovalPageByStoreId(String storeId, HttpSession session, Model model,
+			RedirectAttributes redirectAttributes) {
 		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
 		if (ownedStore == null) {
 			return "redirect:/store/my";
@@ -259,7 +286,7 @@ public class StoreController {
 		} else {
 			redirectAttributes.addFlashAttribute("message", "\uC2B9\uC778 \uCC98\uB9AC \uB300\uC0C1\uC774 \uC5C6\uAC70\uB098 \uC774\uBBF8 \uCC98\uB9AC\uB41C \uC694\uCCAD\uC785\uB2C8\uB2E4.");
 		}
-		return "redirect:/store/approval?storeId=" + ownedStore.getStore_id();
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/approvals";
 	}
 
 	@PostMapping("/store/approval/reject")
@@ -277,11 +304,22 @@ public class StoreController {
 		} else {
 			redirectAttributes.addFlashAttribute("message", "\uAC70\uC808 \uCC98\uB9AC \uB300\uC0C1\uC774 \uC5C6\uAC70\uB098 \uC774\uBBF8 \uCC98\uB9AC\uB41C \uC694\uCCAD\uC785\uB2C8\uB2E4.");
 		}
-		return "redirect:/store/approval?storeId=" + ownedStore.getStore_id();
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/approvals";
 	}
 
 	@GetMapping("/store/employees")
 	public String storeEmployeeList(@RequestParam("storeId") String storeId, HttpSession session, Model model,
+			RedirectAttributes redirectAttributes) {
+		return storeEmployeeListByStoreId(storeId, session, model, redirectAttributes);
+	}
+
+	@GetMapping("/stores/{storeId}/employees")
+	public String storeEmployeeListByPath(@PathVariable("storeId") String storeId, HttpSession session, Model model,
+			RedirectAttributes redirectAttributes) {
+		return storeEmployeeListByStoreId(storeId, session, model, redirectAttributes);
+	}
+
+	private String storeEmployeeListByStoreId(String storeId, HttpSession session, Model model,
 			RedirectAttributes redirectAttributes) {
 		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
 		if (ownedStore == null) {
@@ -295,22 +333,95 @@ public class StoreController {
 	}
 
 	@GetMapping("/store/employees/detail")
-	public String storeEmployeeDetail(@RequestParam("storeId") String storeId, @RequestParam("storeMemberId") int storeMemberId,
+	public String storeEmployeeDetailLegacy(@RequestParam("storeId") String storeId,
+			@RequestParam(value = "employeeId", required = false) String employeeIdParam,
+			@RequestParam(value = "storeMemberId", required = false) Integer storeMemberId,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		if (employeeIdParam != null && !employeeIdParam.trim().isEmpty()) {
+			return "redirect:/stores/" + storeId + "/employees/" + employeeIdParam.trim();
+		}
+
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		if (storeMemberId == null) {
+			redirectAttributes.addFlashAttribute("message", "\uC9C1\uC6D0 \uC815\uBCF4 \uC694\uCCAD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees";
+		}
+
+		StoreEmployee legacyEmployee = storeMapper.findEmployeeDetail(ownedStore.getStore_id(), storeMemberId);
+		if (legacyEmployee == null || legacyEmployee.getMember_bno() == null) {
+			redirectAttributes.addFlashAttribute("message", "\uD574\uB2F9 \uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees";
+		}
+
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/employees/" + legacyEmployee.getMember_bno();
+	}
+
+	@GetMapping("/stores/{storeId}/employees/{employeeId}")
+	public String storeEmployeeDetailByPath(@PathVariable("storeId") String storeId,
+			@PathVariable("employeeId") int employeeId,
 			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
 		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
 		if (ownedStore == null) {
 			return "redirect:/store/my";
 		}
 
-		StoreEmployee employee = storeMapper.findEmployeeDetail(ownedStore.getStore_id(), storeMemberId);
+		StoreEmployee employee = storeMapper.findEmployeeDetailByStoreAndMember(ownedStore.getStore_id(), employeeId);
 		if (employee == null) {
-			redirectAttributes.addFlashAttribute("message", "\uD574\uB2F9 \uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
-			return "redirect:/store/employees?storeId=" + ownedStore.getStore_id();
+			redirectAttributes.addFlashAttribute("message", "\uD574\uB2F9 \uB9E4\uC7A5 \uC18C\uC18D \uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees";
 		}
 
+		addHealthCertificateInfo(model, employee);
 		model.addAttribute("myStore", ownedStore);
 		model.addAttribute("employee", employee);
 		return "Store/store_employee_detail";
+	}
+
+	@PostMapping("/stores/{storeId}/employees/{employeeId}")
+	@Transactional
+	public String updateStoreEmployeeInfo(@PathVariable("storeId") String storeId,
+			@PathVariable("employeeId") int employeeId,
+			@RequestParam(value = "employment", required = false) String employment,
+			@RequestParam(value = "health", required = false) String health,
+			@RequestParam(value = "rate", required = false) String rate,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		StoreEmployee employee = storeMapper.findEmployeeDetailByStoreAndMember(ownedStore.getStore_id(), employeeId);
+		if (employee == null) {
+			redirectAttributes.addFlashAttribute("message", "\uD574\uB2F9 \uB9E4\uC7A5 \uC18C\uC18D \uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees";
+		}
+
+		String normalizedEmployment = normalizeDateInput(employment);
+		if (normalizedEmployment == null && !isBlank(employment)) {
+			redirectAttributes.addFlashAttribute("message", "\uC785\uC0AC\uC77C \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. (YYYY-MM-DD)");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees/" + employeeId;
+		}
+
+		String normalizedHealth = normalizeDateInput(health);
+		if (normalizedHealth == null && !isBlank(health)) {
+			redirectAttributes.addFlashAttribute("message", "\uBCF4\uAC74\uC99D \uB4F1\uB85D\uC77C \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. (YYYY-MM-DD)");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/employees/" + employeeId;
+		}
+
+		String normalizedRate = normalizeText(rate);
+		int updated = storeMapper.updateEmployeeWorkInfo(ownedStore.getStore_id(), employeeId, normalizedEmployment, normalizedHealth,
+				normalizedRate);
+		if (updated == 1) {
+			redirectAttributes.addFlashAttribute("message", "\uC9C1\uC6D0 \uC815\uBCF4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+		} else {
+			redirectAttributes.addFlashAttribute("message", "\uC218\uC815\uD560 \uC9C1\uC6D0 \uC815\uBCF4\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+		}
+
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/employees/" + employeeId;
 	}
 
 	private Integer getLoginMemberBno(HttpSession session, RedirectAttributes redirectAttributes) {
@@ -327,6 +438,19 @@ public class StoreController {
 		return bno;
 	}
 
+	private StoreDashboardView buildDashboardView(Store ownedStore) {
+		StoreDashboardView dashboard = new StoreDashboardView();
+		dashboard.setStoreId(ownedStore.getStore_id());
+		dashboard.setStoreName(ownedStore.getStore_name());
+		dashboard.setStoreCode(ownedStore.getStore_code());
+		dashboard.setAddress(ownedStore.getStore_address());
+		dashboard.setPhone(ownedStore.getStore_phone());
+		dashboard.setCreatedAt(ownedStore.getCreated_at());
+		dashboard.setEmployeeCount(storeMapper.countApprovedEmployeesByStoreId(ownedStore.getStore_id()));
+		dashboard.setPendingApprovalCount(storeMapper.countPendingJoinRequestsByStoreId(ownedStore.getStore_id()));
+		return dashboard;
+	}
+
 	private Store getOwnedStore(String storeId, HttpSession session, RedirectAttributes redirectAttributes) {
 		Integer ceoBno = getLoginMemberBno(session, redirectAttributes);
 		if (ceoBno == null) {
@@ -335,6 +459,12 @@ public class StoreController {
 
 		if (isBlank(storeId)) {
 			redirectAttributes.addFlashAttribute("message", "\uB9E4\uC7A5\uC744 \uBA3C\uC800 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+			return null;
+		}
+
+		Store existingStore = storeMapper.findStoreById(storeId);
+		if (existingStore == null) {
+			redirectAttributes.addFlashAttribute("message", "\uC874\uC7AC\uD558\uC9C0 \uC54A\uB294 \uB9E4\uC7A5\uC785\uB2C8\uB2E4.");
 			return null;
 		}
 
@@ -391,5 +521,48 @@ public class StoreController {
 			return baseAddress;
 		}
 		return baseAddress + " " + detailAddress.trim();
+	}
+
+	private String normalizeDateInput(String dateText) {
+		if (isBlank(dateText)) {
+			return null;
+		}
+		try {
+			return LocalDate.parse(dateText.trim()).toString();
+		} catch (DateTimeParseException ex) {
+			return null;
+		}
+	}
+
+	private String normalizeText(String value) {
+		if (isBlank(value)) {
+			return null;
+		}
+		return value.trim();
+	}
+
+	private void addHealthCertificateInfo(Model model, StoreEmployee employee) {
+		if (employee == null || isBlank(employee.getHealth())) {
+			model.addAttribute("healthExpiryDate", null);
+			model.addAttribute("healthDDayText", "\uB4F1\uB85D \uD544\uC694");
+			return;
+		}
+
+		try {
+			LocalDate registeredDate = LocalDate.parse(employee.getHealth().trim());
+			LocalDate expiryDate = registeredDate.plusYears(1);
+			LocalDate today = LocalDate.now();
+			long days = java.time.temporal.ChronoUnit.DAYS.between(today, expiryDate);
+
+			model.addAttribute("healthExpiryDate", expiryDate.toString());
+			if (days >= 0) {
+				model.addAttribute("healthDDayText", "D-" + days);
+			} else {
+				model.addAttribute("healthDDayText", "\uB9CC\uB8CC\uB428 (D+" + Math.abs(days) + ")");
+			}
+		} catch (DateTimeParseException ex) {
+			model.addAttribute("healthExpiryDate", null);
+			model.addAttribute("healthDDayText", "\uB4F1\uB85D\uC77C \uD615\uC2DD \uD655\uC778 \uD544\uC694");
+		}
 	}
 }

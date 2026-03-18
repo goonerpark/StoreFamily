@@ -6,70 +6,109 @@
 <meta charset="UTF-8">
 <title>직원 리스트</title>
 <style>
-	.wrap { max-width: 1080px; margin: 30px auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
-	.msg { margin-bottom: 14px; padding: 10px; border-radius: 6px; background: #f6f6f6; }
-	table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-	th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-	th { background: #f2f2f2; }
-	.link-btn { display: inline-block; padding: 6px 10px; border: 1px solid #222; text-decoration: none; color: #222; }
-	.top-actions { margin-top: 12px; }
-	.top-actions a { display: inline-block; padding: 8px 12px; border: 1px solid #222; text-decoration: none; color: #222; }
+	:root {
+		--bg: #f6f7fb;
+		--card: #ffffff;
+		--line: #e4e7ec;
+		--text: #1f2937;
+		--muted: #6b7280;
+		--point: #1f6feb;
+	}
+	* { box-sizing: border-box; }
+	body { margin: 0; background: var(--bg); color: var(--text); font-family: "GmarketSansTTFMedium", "Malgun Gothic", sans-serif; }
+	.wrap { max-width: 1160px; margin: 0 auto; padding: 28px 20px 40px; }
+	.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+	.page-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+	.page-title { margin: 0; font-size: 30px; }
+	.page-sub { margin-top: 8px; color: var(--muted); }
+	.msg { margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: #eef4ff; color: #1f3f7f; }
+	.table-card { padding: 16px; overflow-x: auto; }
+	table { width: 100%; border-collapse: collapse; min-width: 860px; }
+	th, td { border-bottom: 1px solid var(--line); padding: 12px 10px; text-align: left; font-size: 14px; }
+	th { color: var(--muted); font-size: 13px; background: #fafbfe; }
+	.name-link { color: var(--point); text-decoration: none; font-weight: 700; }
+	.name-link:hover { text-decoration: underline; }
+	.badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+	.badge.on { background: #e8f7ec; color: #136a2f; }
+	.badge.off { background: #fff3cd; color: #8a6d1a; }
+	.detail-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--text); text-decoration: none; font-weight: 700; }
+	.detail-btn:hover { border-color: var(--point); color: var(--point); }
+	.empty { padding: 28px 6px; color: var(--muted); }
+	@media (max-width: 760px) {
+		.wrap { padding: 18px 14px 26px; }
+		.page-header { flex-direction: column; align-items: stretch; }
+		.page-title { font-size: 26px; }
+	}
 </style>
 </head>
 <body>
 <div class="wrap">
-	<h2>직원 리스트</h2>
-	<p>매장명: ${myStore.store_name}</p>
-	<p>매장 코드: ${myStore.store_code}</p>
-
-	<div class="top-actions">
-		<a href="${pageContext.request.contextPath}/store/manage?storeId=${myStore.store_id}">매장 관리로 돌아가기</a>
+	<div class="page-header">
+		<div>
+			<h1 class="page-title">직원 리스트</h1>
+			<div class="page-sub">
+				<strong><c:out value="${myStore.store_name}"/></strong>
+				(<c:out value="${myStore.store_code}"/>)
+			</div>
+		</div>
 	</div>
 
 	<c:if test="${not empty message}">
 		<div class="msg">${message}</div>
 	</c:if>
 
-	<c:choose>
-		<c:when test="${empty employees}">
-			<p>승인된 직원이 없습니다.</p>
-		</c:when>
-		<c:otherwise>
-			<table>
-				<thead>
-				<tr>
-					<th>이름</th>
-					<th>이메일</th>
-					<th>전화번호</th>
-					<th>입사일</th>
-					<th>보건증 만료일</th>
-					<th>시급</th>
-					<th>상세</th>
-				</tr>
-				</thead>
-				<tbody>
-				<c:forEach var="emp" items="${employees}">
+	<div class="card table-card">
+		<c:choose>
+			<c:when test="${empty employees}">
+				<div class="empty">현재 승인된 직원이 없습니다.</div>
+			</c:when>
+			<c:otherwise>
+				<table>
+					<thead>
 					<tr>
-						<td>${emp.name}</td>
-						<td>${emp.email}</td>
-						<td>${emp.phone}</td>
-						<td>
-							<c:choose>
-								<c:when test="${not empty emp.employment}">${emp.employment}</c:when>
-								<c:otherwise>${emp.created_at}</c:otherwise>
-							</c:choose>
-						</td>
-						<td>${emp.health}</td>
-						<td>${emp.rate}</td>
-						<td>
-							<a class="link-btn" href="${pageContext.request.contextPath}/store/employees/detail?storeId=${myStore.store_id}&storeMemberId=${emp.store_member_id}">보기</a>
-						</td>
+						<th>이름</th>
+						<th>아이디</th>
+						<th>이메일</th>
+						<th>전화번호</th>
+						<th>직책</th>
+						<th>상태</th>
+						<th>등록일</th>
+						<th>상세</th>
 					</tr>
-				</c:forEach>
-				</tbody>
-			</table>
-		</c:otherwise>
-	</c:choose>
+					</thead>
+					<tbody>
+					<c:forEach var="emp" items="${employees}">
+						<tr>
+							<td>
+								<a class="name-link" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/employees/${emp.member_bno}">
+									<c:out value="${emp.name}"/>
+								</a>
+							</td>
+							<td><c:out value="${emp.member_id}"/></td>
+							<td><c:out value="${emp.email}"/></td>
+							<td><c:out value="${emp.phone}"/></td>
+							<td><c:out value="${emp.position}"/></td>
+							<td>
+								<c:choose>
+									<c:when test="${emp.chk == 1}">
+										<span class="badge on">승인 완료</span>
+									</c:when>
+									<c:otherwise>
+										<span class="badge off">승인 대기</span>
+									</c:otherwise>
+								</c:choose>
+							</td>
+							<td><c:out value="${emp.created_at}"/></td>
+							<td>
+								<a class="detail-btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/employees/${emp.member_bno}">상세 보기</a>
+							</td>
+						</tr>
+					</c:forEach>
+					</tbody>
+				</table>
+			</c:otherwise>
+		</c:choose>
+	</div>
 </div>
 </body>
 </html>

@@ -29,6 +29,10 @@
 		select * from store where ceo_bno = #{ceoBno} order by created_at desc
 	</select>
 
+	<select id="findStoreById" resultType="Store">
+		select * from store where store_id = #{storeId} limit 1
+	</select>
+
 	<select id="findStoreByIdAndCeoBno" resultType="Store">
 		select * from store where store_id = #{storeId} and ceo_bno = #{ceoBno} limit 1
 	</select>
@@ -60,6 +64,14 @@
 		order by sm.store_member_id desc
 	</select>
 
+	<select id="countPendingJoinRequestsByStoreId" resultType="int">
+		select count(*)
+		from store_member
+		where store_id = #{storeId}
+		  and position = '직원'
+		  and chk = 0
+	</select>
+
 	<update id="approveStoreMember">
 		update store_member
 		set chk = 1
@@ -80,9 +92,12 @@
 			sm.store_member_id,
 			sm.store_id,
 			sm.member_bno,
+			m.id as member_id,
 			m.name,
 			m.email,
 			m.phone,
+			sm.position,
+			sm.chk,
 			sm.employment,
 			sm.health,
 			sm.rate,
@@ -95,14 +110,25 @@
 		order by sm.store_member_id desc
 	</select>
 
+	<select id="countApprovedEmployeesByStoreId" resultType="int">
+		select count(*)
+		from store_member
+		where store_id = #{storeId}
+		  and position = '직원'
+		  and chk = 1
+	</select>
+
 	<select id="findEmployeeDetail" resultType="StoreEmployee">
 		select
 			sm.store_member_id,
 			sm.store_id,
 			sm.member_bno,
+			m.id as member_id,
 			m.name,
 			m.email,
 			m.phone,
+			sm.position,
+			sm.chk,
 			sm.employment,
 			sm.health,
 			sm.rate,
@@ -115,5 +141,45 @@
 		  and sm.chk = 1
 		limit 1
 	</select>
+
+	<select id="findEmployeeDetailByStoreAndMember" resultType="StoreEmployee">
+		select
+			sm.store_member_id,
+			sm.store_id,
+			sm.member_bno,
+			m.id as member_id,
+			m.name,
+			m.email,
+			m.phone,
+			m.gender,
+			m.bth,
+			m.address,
+			m.address_etc,
+			sm.position,
+			sm.chk,
+			sm.employment,
+			sm.health,
+			sm.rate,
+			sm.created_at,
+			s.store_name,
+			s.store_code
+		from store_member sm
+		join member m on sm.member_bno = m.bno
+		join store s on sm.store_id = s.store_id
+		where sm.store_id = #{storeId}
+		  and sm.member_bno = #{memberBno}
+		  and sm.position = '직원'
+		limit 1
+	</select>
+
+	<update id="updateEmployeeWorkInfo">
+		update store_member
+		set employment = #{employment},
+			health = #{health},
+			rate = #{rate}
+		where store_id = #{storeId}
+		  and member_bno = #{memberBno}
+		  and position = '직원'
+	</update>
 
 </mapper>
