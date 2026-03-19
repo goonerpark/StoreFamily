@@ -103,6 +103,10 @@
 					<div class="menu-name">스케줄 캘린더</div>
 					<div class="menu-desc">월별 근무 스케줄 등록/수정/삭제</div>
 				</a>
+				<a class="menu-link" href="${pageContext.request.contextPath}/stores/${dashboard.storeId}/schedule/parts">
+					<div class="menu-name">근무 파트 관리</div>
+					<div class="menu-desc">근무 파트 생성/수정/삭제</div>
+				</a>
 				<a class="menu-link" href="${pageContext.request.contextPath}/my-stores">
 					<div class="menu-name">내 매장 목록</div>
 					<div class="menu-desc">보유한 전체 매장 목록으로 이동</div>

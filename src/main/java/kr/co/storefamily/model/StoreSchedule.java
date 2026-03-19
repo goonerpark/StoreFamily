@@ -9,11 +9,15 @@ public class StoreSchedule {
 	private Integer work_minutes;
 	private String status;
 	private String memo;
+	private Integer part_bno;
 	private String created_at;
 	private String updated_at;
 	private Integer member_bno;
 	private String employee_name;
 	private String employee_id;
+	private String part_name;
+	private String color_code;
+	private Integer sort_order;
 
 	public Integer getBno() {
 		return bno;
@@ -79,6 +83,14 @@ public class StoreSchedule {
 		this.memo = memo;
 	}
 
+	public Integer getPart_bno() {
+		return part_bno;
+	}
+
+	public void setPart_bno(Integer part_bno) {
+		this.part_bno = part_bno;
+	}
+
 	public String getCreated_at() {
 		return created_at;
 	}
@@ -117,5 +129,29 @@ public class StoreSchedule {
 
 	public void setEmployee_id(String employee_id) {
 		this.employee_id = employee_id;
+	}
+
+	public String getPart_name() {
+		return part_name;
+	}
+
+	public void setPart_name(String part_name) {
+		this.part_name = part_name;
+	}
+
+	public String getColor_code() {
+		return color_code;
+	}
+
+	public void setColor_code(String color_code) {
+		this.color_code = color_code;
+	}
+
+	public Integer getSort_order() {
+		return sort_order;
+	}
+
+	public void setSort_order(Integer sort_order) {
+		this.sort_order = sort_order;
 	}
 }

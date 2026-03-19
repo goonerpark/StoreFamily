@@ -41,7 +41,9 @@
 	.day-top { display: flex; justify-content: space-between; align-items: center; }
 	.day-num { font-weight: 700; }
 	.today { font-size: 11px; color: var(--point); font-weight: 700; }
-	.count-badge { align-self: flex-start; margin-top: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #eef2ff; color: #3356c5; }
+	.preview-list { margin-top: 8px; display: grid; gap: 4px; }
+	.preview-item { font-size: 11px; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 999px; padding: 2px 7px; }
+	.preview-more { font-size: 11px; font-weight: 700; color: #1f6feb; }
 	.panel { padding: 14px; }
 	.panel-title { margin: 0 0 10px; font-size: 18px; }
 	.list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
@@ -80,6 +82,9 @@
 		<div class="nav-btns">
 			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">매장 관리</a>
 			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/employees">직원 리스트</a>
+			<c:if test="${not readOnly}">
+				<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/parts">근무 파트 관리</a>
+			</c:if>
 		</div>
 	</div>
 
@@ -108,14 +113,20 @@
 								<span class="day-num">${cell.day}</span>
 								<c:if test="${cell.today}"><span class="today">TODAY</span></c:if>
 							</div>
-							<c:if test="${cell.count > 0}">
-								<span class="count-badge">${cell.count}건</span>
-							</c:if>
+							<div class="preview-list">
+								<c:forEach var="item" items="${cell.previews}">
+									<div class="preview-item" style="background:${item.color};"><c:out value="${item.label}"/></div>
+								</c:forEach>
+								<c:if test="${cell.overflow > 0}">
+									<div class="preview-more">+${cell.overflow}</div>
+								</c:if>
+							</div>
 						</a>
 					</c:forEach>
 				</div>
 			</div>
 
+			<c:if test="${not readOnly}">
 			<div class="card form-card">
 				<h3 class="form-title">스케줄 등록</h3>
 				<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">
@@ -136,20 +147,21 @@
 							<input type="date" name="workDate" value="${selectedDate}" required>
 						</div>
 						<div class="form-group">
+							<label>근무 파트</label>
+							<select name="partBno" onchange="applyPart(this)">
+								<option value="">직접 입력</option>
+								<c:forEach var="part" items="${parts}">
+									<option value="${part.bno}" data-start="${fn:substring(part.start_time,0,5)}" data-end="${fn:substring(part.end_time,0,5)}">${part.part_name}</option>
+								</c:forEach>
+							</select>
+						</div>
+						<div class="form-group">
 							<label>시작 시간</label>
 							<input type="time" name="startTime" required>
 						</div>
 						<div class="form-group">
 							<label>종료 시간</label>
 							<input type="time" name="endTime" required>
-						</div>
-						<div class="form-group">
-							<label>상태</label>
-							<select name="status">
-								<c:forEach var="status" items="${statusOptions}">
-									<option value="${status}">${status}</option>
-								</c:forEach>
-							</select>
 						</div>
 						<div class="form-group full">
 							<label>메모</label>
@@ -161,6 +173,7 @@
 					</div>
 				</form>
 			</div>
+			</c:if>
 		</div>
 
 		<div>
@@ -176,12 +189,15 @@
 								<li class="item">
 									<div class="item-head">
 										<div class="item-title"><c:out value="${sc.employee_name}"/> (<c:out value="${sc.employee_id}"/>)</div>
-										<div><c:out value="${sc.status}"/></div>
+										<c:if test="${not empty sc.part_name}">
+											<div><c:out value="${sc.part_name}"/></div>
+										</c:if>
 									</div>
 									<div class="item-sub">${fn:substring(sc.start_time,0,5)} ~ ${fn:substring(sc.end_time,0,5)} / ${sc.work_minutes}분</div>
 									<c:if test="${not empty sc.memo}">
 										<div class="item-sub"><c:out value="${sc.memo}"/></div>
 									</c:if>
+									<c:if test="${not readOnly}">
 									<div class="item-actions">
 										<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${month}&date=${selectedDate}&editScheduleId=${sc.bno}">수정</a>
 										<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules/${sc.bno}/delete" style="margin:0;">
@@ -190,6 +206,7 @@
 											<button class="btn btn-danger" type="submit" onclick="return confirm('해당 스케줄을 삭제할까요?');">삭제</button>
 										</form>
 									</div>
+									</c:if>
 								</li>
 							</c:forEach>
 						</ul>
@@ -197,7 +214,7 @@
 				</c:choose>
 			</div>
 
-			<c:if test="${not empty editSchedule}">
+			<c:if test="${not readOnly and not empty editSchedule}">
 				<div class="card form-card">
 					<h3 class="form-title">스케줄 수정</h3>
 					<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules/${editSchedule.bno}">
@@ -217,20 +234,21 @@
 								<input type="date" name="workDate" value="${editSchedule.work_date}" required>
 							</div>
 							<div class="form-group">
+								<label>근무 파트</label>
+								<select name="partBno" onchange="applyPart(this)">
+									<option value="">직접 입력</option>
+									<c:forEach var="part" items="${parts}">
+										<option value="${part.bno}" data-start="${fn:substring(part.start_time,0,5)}" data-end="${fn:substring(part.end_time,0,5)}" ${part.bno == editSchedule.part_bno ? 'selected' : ''}>${part.part_name}</option>
+									</c:forEach>
+								</select>
+							</div>
+							<div class="form-group">
 								<label>시작 시간</label>
 								<input type="time" name="startTime" value="${fn:substring(editSchedule.start_time,0,5)}" required>
 							</div>
 							<div class="form-group">
 								<label>종료 시간</label>
 								<input type="time" name="endTime" value="${fn:substring(editSchedule.end_time,0,5)}" required>
-							</div>
-							<div class="form-group">
-								<label>상태</label>
-								<select name="status">
-									<c:forEach var="status" items="${statusOptions}">
-										<option value="${status}" ${status == editSchedule.status ? 'selected' : ''}>${status}</option>
-									</c:forEach>
-								</select>
 							</div>
 							<div class="form-group full">
 								<label>메모</label>
@@ -247,5 +265,19 @@
 		</div>
 	</div>
 </div>
+<script>
+	function applyPart(selectEl) {
+		var form = selectEl.form;
+		if (!form) return;
+		var opt = selectEl.options[selectEl.selectedIndex];
+		if (!opt || !opt.value) return;
+		var start = opt.getAttribute('data-start');
+		var end = opt.getAttribute('data-end');
+		var startInput = form.querySelector('input[name=\"startTime\"]');
+		var endInput = form.querySelector('input[name=\"endTime\"]');
+		if (startInput && start) startInput.value = start;
+		if (endInput && end) endInput.value = end;
+	}
+</script>
 </body>
 </html>

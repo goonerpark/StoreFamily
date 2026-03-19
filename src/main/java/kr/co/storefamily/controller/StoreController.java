@@ -8,7 +8,6 @@ import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +33,7 @@ import kr.co.storefamily.model.Store;
 import kr.co.storefamily.model.StoreEmployee;
 import kr.co.storefamily.model.StoreJoinRequest;
 import kr.co.storefamily.model.StoreMember;
+import kr.co.storefamily.model.SchedulePart;
 import kr.co.storefamily.model.StoreSchedule;
 
 @Controller
@@ -47,8 +47,7 @@ public class StoreController {
 	private static final int STORE_CODE_LENGTH = 8;
 	private static final SecureRandom RANDOM = new SecureRandom();
 	private static final String SCHEDULE_STATUS_SCHEDULED = "SCHEDULED";
-	private static final String SCHEDULE_STATUS_COMPLETED = "COMPLETED";
-	private static final String SCHEDULE_STATUS_CANCELED = "CANCELED";
+	private static final String DEFAULT_PART_COLOR = "#E8F1FF";
 
 	@Autowired
 	private StoreMapper storeMapper;
@@ -446,50 +445,111 @@ public class StoreController {
 		if (ownedStore == null) {
 			return "redirect:/store/my";
 		}
+		return renderScheduleCalendar(ownedStore, monthText, dateText, editScheduleId, model, redirectAttributes, false, null);
+	}
 
-		YearMonth month = parseYearMonthOrDefault(monthText, YearMonth.now());
-		LocalDate selectedDate = parseLocalDateOrNull(dateText);
-		if (selectedDate == null || !YearMonth.from(selectedDate).equals(month)) {
-			selectedDate = month.atDay(1);
+	@GetMapping("/stores/{storeId}/my-schedules")
+	public String myScheduleCalendar(@PathVariable("storeId") String storeId,
+			@RequestParam(value = "month", required = false) String monthText,
+			@RequestParam(value = "date", required = false) String dateText,
+			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+		Integer memberBno = getLoginMemberBno(session, redirectAttributes);
+		if (memberBno == null) {
+			return "redirect:/login";
 		}
-
-		String monthStart = month.atDay(1).toString();
-		String monthEnd = month.atEndOfMonth().toString();
-		String selectedDateText = selectedDate.toString();
-
-		List<StoreEmployee> employees = storeMapper.findApprovedEmployeesByStoreId(ownedStore.getStore_id());
-		List<StoreSchedule> monthSchedules = storeMapper.findSchedulesByStoreAndMonth(ownedStore.getStore_id(), monthStart, monthEnd);
-		List<StoreSchedule> daySchedules = storeMapper.findSchedulesByStoreAndDate(ownedStore.getStore_id(), selectedDateText);
-
-		StoreSchedule editSchedule = null;
-		if (editScheduleId != null) {
-			editSchedule = storeMapper.findScheduleByStoreAndId(ownedStore.getStore_id(), editScheduleId);
-			if (editSchedule == null) {
-				redirectAttributes.addFlashAttribute("message", "수정할 스케줄 정보를 찾을 수 없습니다.");
-				return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), selectedDateText);
-			}
+		Store store = storeMapper.findStoreById(storeId);
+		if (store == null) {
+			redirectAttributes.addFlashAttribute("message", "존재하지 않는 매장입니다.");
+			return "redirect:/store/my";
 		}
-
-		Map<String, Integer> scheduleCountByDate = new HashMap<String, Integer>();
-		for (StoreSchedule schedule : monthSchedules) {
-			if (schedule.getWork_date() == null) {
-				continue;
-			}
-			Integer count = scheduleCountByDate.get(schedule.getWork_date());
-			scheduleCountByDate.put(schedule.getWork_date(), count == null ? 1 : count + 1);
+		StoreMember membership = storeMapper.findApprovedStoreMember(storeId, memberBno);
+		if (membership == null) {
+			redirectAttributes.addFlashAttribute("message", "해당 매장 스케줄을 볼 권한이 없습니다.");
+			return "redirect:/store/my";
 		}
+		return renderScheduleCalendar(store, monthText, dateText, null, model, redirectAttributes, true, memberBno);
+	}
 
+	@GetMapping("/stores/{storeId}/schedule/parts")
+	public String schedulePartManagePage(@PathVariable("storeId") String storeId,
+			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
 		model.addAttribute("myStore", ownedStore);
-		model.addAttribute("month", month.toString());
-		model.addAttribute("selectedDate", selectedDateText);
-		model.addAttribute("prevMonth", month.minusMonths(1).toString());
-		model.addAttribute("nextMonth", month.plusMonths(1).toString());
-		model.addAttribute("calendarCells", buildCalendarCells(month, selectedDate, scheduleCountByDate));
-		model.addAttribute("employees", employees);
-		model.addAttribute("daySchedules", daySchedules);
-		model.addAttribute("editSchedule", editSchedule);
-		model.addAttribute("statusOptions", Arrays.asList(SCHEDULE_STATUS_SCHEDULED, SCHEDULE_STATUS_COMPLETED, SCHEDULE_STATUS_CANCELED));
-		return "Store/store_schedule_calendar";
+		model.addAttribute("parts", storeMapper.findSchedulePartsByStoreId(ownedStore.getStore_id()));
+		return "Store/store_schedule_parts";
+	}
+
+	@PostMapping("/stores/{storeId}/schedule/parts")
+	@Transactional
+	public String createSchedulePart(@PathVariable("storeId") String storeId,
+			@RequestParam("partName") String partName,
+			@RequestParam("startTime") String startTime,
+			@RequestParam("endTime") String endTime,
+			@RequestParam(value = "colorCode", required = false) String colorCode,
+			@RequestParam(value = "sortOrder", required = false) String sortOrderText,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		LocalTime parsedStart = parseLocalTimeOrNull(startTime);
+		LocalTime parsedEnd = parseLocalTimeOrNull(endTime);
+		if (isBlank(partName) || parsedStart == null || parsedEnd == null || !parsedEnd.isAfter(parsedStart)) {
+			redirectAttributes.addFlashAttribute("message", "근무 파트 입력값을 확인해 주세요.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/schedule/parts";
+		}
+
+		Integer sortOrder = parseIntOrNull(sortOrderText);
+		int inserted = storeMapper.insertSchedulePart(ownedStore.getStore_id(), partName.trim(), parsedStart.toString(),
+				parsedEnd.toString(), normalizeColorCode(colorCode), sortOrder);
+		redirectAttributes.addFlashAttribute("message", inserted == 1 ? "근무 파트가 등록되었습니다." : "근무 파트 등록에 실패했습니다.");
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/schedule/parts";
+	}
+
+	@PostMapping("/stores/{storeId}/schedule/parts/{partBno}")
+	@Transactional
+	public String updateSchedulePart(@PathVariable("storeId") String storeId, @PathVariable("partBno") int partBno,
+			@RequestParam("partName") String partName,
+			@RequestParam("startTime") String startTime,
+			@RequestParam("endTime") String endTime,
+			@RequestParam(value = "colorCode", required = false) String colorCode,
+			@RequestParam(value = "sortOrder", required = false) String sortOrderText,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		LocalTime parsedStart = parseLocalTimeOrNull(startTime);
+		LocalTime parsedEnd = parseLocalTimeOrNull(endTime);
+		if (isBlank(partName) || parsedStart == null || parsedEnd == null || !parsedEnd.isAfter(parsedStart)) {
+			redirectAttributes.addFlashAttribute("message", "근무 파트 수정값을 확인해 주세요.");
+			return "redirect:/stores/" + ownedStore.getStore_id() + "/schedule/parts";
+		}
+
+		Integer sortOrder = parseIntOrNull(sortOrderText);
+		int updated = storeMapper.updateSchedulePart(ownedStore.getStore_id(), partBno, partName.trim(), parsedStart.toString(),
+				parsedEnd.toString(), normalizeColorCode(colorCode), sortOrder);
+		redirectAttributes.addFlashAttribute("message", updated == 1 ? "근무 파트가 수정되었습니다." : "수정할 근무 파트를 찾지 못했습니다.");
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/schedule/parts";
+	}
+
+	@PostMapping("/stores/{storeId}/schedule/parts/{partBno}/delete")
+	@Transactional
+	public String deleteSchedulePart(@PathVariable("storeId") String storeId, @PathVariable("partBno") int partBno,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+		storeMapper.clearSchedulePartRefs(ownedStore.getStore_id(), partBno);
+		int deleted = storeMapper.deleteSchedulePart(ownedStore.getStore_id(), partBno);
+		redirectAttributes.addFlashAttribute("message", deleted == 1 ? "근무 파트가 삭제되었습니다." : "삭제할 근무 파트를 찾지 못했습니다.");
+		return "redirect:/stores/" + ownedStore.getStore_id() + "/schedule/parts";
 	}
 
 	@PostMapping("/stores/{storeId}/schedules")
@@ -499,7 +559,7 @@ public class StoreController {
 			@RequestParam("workDate") String workDate,
 			@RequestParam("startTime") String startTime,
 			@RequestParam("endTime") String endTime,
-			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "partBno", required = false) Integer partBno,
 			@RequestParam(value = "memo", required = false) String memo,
 			@RequestParam(value = "month", required = false) String monthText,
 			@RequestParam(value = "selectedDate", required = false) String selectedDateText,
@@ -512,6 +572,16 @@ public class StoreController {
 		LocalDate parsedWorkDate = parseLocalDateOrNull(workDate);
 		LocalTime parsedStartTime = parseLocalTimeOrNull(startTime);
 		LocalTime parsedEndTime = parseLocalTimeOrNull(endTime);
+		SchedulePart selectedPart = null;
+		if (partBno != null) {
+			selectedPart = storeMapper.findSchedulePartByStoreAndId(ownedStore.getStore_id(), partBno.intValue());
+			if (selectedPart == null) {
+				redirectAttributes.addFlashAttribute("message", "선택한 근무 파트를 찾을 수 없습니다.");
+				return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), monthText, selectedDateText);
+			}
+			parsedStartTime = parseLocalTimeOrNull(selectedPart.getStart_time());
+			parsedEndTime = parseLocalTimeOrNull(selectedPart.getEnd_time());
+		}
 		YearMonth month = parseYearMonthOrDefault(monthText,
 				parsedWorkDate == null ? YearMonth.now() : YearMonth.from(parsedWorkDate));
 
@@ -525,13 +595,18 @@ public class StoreController {
 			redirectAttributes.addFlashAttribute("message", "종료 시간은 시작 시간보다 늦어야 합니다.");
 			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
 		}
+		int overlapCount = storeMapper.countScheduleOverlapForCreate(ownedStore.getStore_id(), storeEmployeeBno.intValue(),
+				parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString());
+		if (overlapCount > 0) {
+			redirectAttributes.addFlashAttribute("message", "해당 직원의 같은 날짜 스케줄이 겹칩니다.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+		}
 
 		int workMinutes = (int) ChronoUnit.MINUTES.between(parsedStartTime, parsedEndTime);
-		String normalizedStatus = normalizeScheduleStatus(status);
 		String normalizedMemo = normalizeScheduleMemo(memo);
 		int inserted = storeMapper.insertScheduleForStore(ownedStore.getStore_id(), storeEmployeeBno.intValue(),
 				parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString(), workMinutes,
-				normalizedStatus, normalizedMemo);
+				SCHEDULE_STATUS_SCHEDULED, normalizedMemo, partBno);
 
 		if (inserted == 1) {
 			redirectAttributes.addFlashAttribute("message", "스케줄이 등록되었습니다.");
@@ -549,7 +624,7 @@ public class StoreController {
 			@RequestParam("workDate") String workDate,
 			@RequestParam("startTime") String startTime,
 			@RequestParam("endTime") String endTime,
-			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "partBno", required = false) Integer partBno,
 			@RequestParam(value = "memo", required = false) String memo,
 			@RequestParam(value = "month", required = false) String monthText,
 			@RequestParam(value = "selectedDate", required = false) String selectedDateText,
@@ -562,6 +637,15 @@ public class StoreController {
 		LocalDate parsedWorkDate = parseLocalDateOrNull(workDate);
 		LocalTime parsedStartTime = parseLocalTimeOrNull(startTime);
 		LocalTime parsedEndTime = parseLocalTimeOrNull(endTime);
+		if (partBno != null) {
+			SchedulePart selectedPart = storeMapper.findSchedulePartByStoreAndId(ownedStore.getStore_id(), partBno.intValue());
+			if (selectedPart == null) {
+				redirectAttributes.addFlashAttribute("message", "선택한 근무 파트를 찾을 수 없습니다.");
+				return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), monthText, selectedDateText);
+			}
+			parsedStartTime = parseLocalTimeOrNull(selectedPart.getStart_time());
+			parsedEndTime = parseLocalTimeOrNull(selectedPart.getEnd_time());
+		}
 		YearMonth month = parseYearMonthOrDefault(monthText,
 				parsedWorkDate == null ? YearMonth.now() : YearMonth.from(parsedWorkDate));
 
@@ -575,13 +659,18 @@ public class StoreController {
 			redirectAttributes.addFlashAttribute("message", "종료 시간은 시작 시간보다 늦어야 합니다.");
 			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
 		}
+		int overlapCount = storeMapper.countScheduleOverlapForUpdate(ownedStore.getStore_id(), scheduleId,
+				storeEmployeeBno.intValue(), parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString());
+		if (overlapCount > 0) {
+			redirectAttributes.addFlashAttribute("message", "해당 직원의 같은 날짜 스케줄이 겹칩니다.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+		}
 
 		int workMinutes = (int) ChronoUnit.MINUTES.between(parsedStartTime, parsedEndTime);
-		String normalizedStatus = normalizeScheduleStatus(status);
 		String normalizedMemo = normalizeScheduleMemo(memo);
 		int updated = storeMapper.updateScheduleForStore(ownedStore.getStore_id(), scheduleId, storeEmployeeBno.intValue(),
 				parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString(), workMinutes,
-				normalizedStatus, normalizedMemo);
+				SCHEDULE_STATUS_SCHEDULED, normalizedMemo, partBno);
 
 		if (updated == 1) {
 			redirectAttributes.addFlashAttribute("message", "스케줄이 수정되었습니다.");
@@ -774,20 +863,6 @@ public class StoreController {
 		}
 	}
 
-	private String normalizeScheduleStatus(String statusText) {
-		if (isBlank(statusText)) {
-			return SCHEDULE_STATUS_SCHEDULED;
-		}
-		String normalized = statusText.trim().toUpperCase(Locale.ROOT);
-		if (SCHEDULE_STATUS_COMPLETED.equals(normalized)) {
-			return SCHEDULE_STATUS_COMPLETED;
-		}
-		if (SCHEDULE_STATUS_CANCELED.equals(normalized)) {
-			return SCHEDULE_STATUS_CANCELED;
-		}
-		return SCHEDULE_STATUS_SCHEDULED;
-	}
-
 	private String normalizeScheduleMemo(String memo) {
 		if (isBlank(memo)) {
 			return null;
@@ -811,10 +886,103 @@ public class StoreController {
 	}
 
 	private String buildScheduleRedirectUrl(String storeId, String month, String selectedDate) {
-		return "/stores/" + storeId + "/schedules?month=" + month + "&date=" + selectedDate;
+		String monthParam = parseYearMonthOrDefault(month, YearMonth.now()).toString();
+		String dateParam = isBlank(selectedDate) ? YearMonth.parse(monthParam).atDay(1).toString() : selectedDate;
+		return "/stores/" + storeId + "/schedules?month=" + monthParam + "&date=" + dateParam;
 	}
 
-	private List<Map<String, Object>> buildCalendarCells(YearMonth month, LocalDate selectedDate, Map<String, Integer> countByDate) {
+	private String renderScheduleCalendar(Store store, String monthText, String dateText, Integer editScheduleId, Model model,
+			RedirectAttributes redirectAttributes, boolean readOnly, Integer loginMemberBno) {
+		YearMonth month = parseYearMonthOrDefault(monthText, YearMonth.now());
+		LocalDate selectedDate = parseLocalDateOrNull(dateText);
+		if (selectedDate == null || !YearMonth.from(selectedDate).equals(month)) {
+			selectedDate = month.atDay(1);
+		}
+		String monthStart = month.atDay(1).toString();
+		String monthEnd = month.atEndOfMonth().toString();
+		String selectedDateText = selectedDate.toString();
+
+		List<StoreEmployee> employees = storeMapper.findApprovedEmployeesByStoreId(store.getStore_id());
+		List<SchedulePart> parts = storeMapper.findSchedulePartsByStoreId(store.getStore_id());
+		List<StoreSchedule> monthSchedules = storeMapper.findSchedulesByStoreAndMonth(store.getStore_id(), monthStart, monthEnd);
+		List<StoreSchedule> daySchedules = storeMapper.findSchedulesByStoreAndDate(store.getStore_id(), selectedDateText);
+
+		if (readOnly && loginMemberBno != null) {
+			monthSchedules.removeIf(sc -> sc.getMember_bno() == null || !loginMemberBno.equals(sc.getMember_bno()));
+		}
+
+		StoreSchedule editSchedule = null;
+		if (!readOnly && editScheduleId != null) {
+			editSchedule = storeMapper.findScheduleByStoreAndId(store.getStore_id(), editScheduleId.intValue());
+			if (editSchedule == null) {
+				redirectAttributes.addFlashAttribute("message", "수정할 스케줄 정보를 찾을 수 없습니다.");
+				return "redirect:" + buildScheduleRedirectUrl(store.getStore_id(), month.toString(), selectedDateText);
+			}
+		}
+
+		Map<String, List<StoreSchedule>> schedulesByDate = new HashMap<String, List<StoreSchedule>>();
+		for (StoreSchedule schedule : monthSchedules) {
+			if (schedule.getWork_date() == null) {
+				continue;
+			}
+			List<StoreSchedule> bucket = schedulesByDate.get(schedule.getWork_date());
+			if (bucket == null) {
+				bucket = new ArrayList<StoreSchedule>();
+				schedulesByDate.put(schedule.getWork_date(), bucket);
+			}
+			bucket.add(schedule);
+		}
+
+		Map<String, List<Map<String, String>>> previewItemsByDate = new HashMap<String, List<Map<String, String>>>();
+		Map<String, Integer> overflowCountByDate = new HashMap<String, Integer>();
+		for (Map.Entry<String, List<StoreSchedule>> entry : schedulesByDate.entrySet()) {
+			List<StoreSchedule> schedules = entry.getValue();
+			schedules.sort((a, b) -> {
+				int aOrder = a.getSort_order() == null ? 9999 : a.getSort_order().intValue();
+				int bOrder = b.getSort_order() == null ? 9999 : b.getSort_order().intValue();
+				int orderCompare = Integer.compare(aOrder, bOrder);
+				if (orderCompare != 0) {
+					return orderCompare;
+				}
+				int timeCompare = defaultString(a.getStart_time()).compareTo(defaultString(b.getStart_time()));
+				if (timeCompare != 0) {
+					return timeCompare;
+				}
+				return Integer.compare(a.getBno() == null ? 0 : a.getBno().intValue(),
+						b.getBno() == null ? 0 : b.getBno().intValue());
+			});
+
+			List<Map<String, String>> items = new ArrayList<Map<String, String>>();
+			int maxVisible = 3;
+			int visibleCount = Math.min(maxVisible, schedules.size());
+			for (int i = 0; i < visibleCount; i++) {
+				StoreSchedule schedule = schedules.get(i);
+				Map<String, String> item = new HashMap<String, String>();
+				String partLabel = isBlank(schedule.getPart_name()) ? resolveShiftLabel(schedule) : schedule.getPart_name();
+				item.put("label", defaultString(schedule.getEmployee_name()) + "(" + partLabel + ")");
+				item.put("color", isBlank(schedule.getColor_code()) ? DEFAULT_PART_COLOR : schedule.getColor_code());
+				items.add(item);
+			}
+			previewItemsByDate.put(entry.getKey(), items);
+			overflowCountByDate.put(entry.getKey(), Integer.valueOf(Math.max(0, schedules.size() - maxVisible)));
+		}
+
+		model.addAttribute("myStore", store);
+		model.addAttribute("month", month.toString());
+		model.addAttribute("selectedDate", selectedDateText);
+		model.addAttribute("prevMonth", month.minusMonths(1).toString());
+		model.addAttribute("nextMonth", month.plusMonths(1).toString());
+		model.addAttribute("calendarCells", buildCalendarCells(month, selectedDate, previewItemsByDate, overflowCountByDate));
+		model.addAttribute("employees", employees);
+		model.addAttribute("parts", parts);
+		model.addAttribute("daySchedules", daySchedules);
+		model.addAttribute("editSchedule", editSchedule);
+		model.addAttribute("readOnly", Boolean.valueOf(readOnly));
+		return "Store/store_schedule_calendar";
+	}
+
+	private List<Map<String, Object>> buildCalendarCells(YearMonth month, LocalDate selectedDate,
+			Map<String, List<Map<String, String>>> previewItemsByDate, Map<String, Integer> overflowCountByDate) {
 		List<Map<String, Object>> cells = new ArrayList<Map<String, Object>>();
 		LocalDate start = month.atDay(1);
 		while (start.getDayOfWeek() != DayOfWeek.SUNDAY) {
@@ -834,10 +1002,60 @@ public class StoreController {
 			cell.put("currentMonth", Boolean.valueOf(YearMonth.from(cursor).equals(month)));
 			cell.put("selected", Boolean.valueOf(cursor.equals(selectedDate)));
 			cell.put("today", Boolean.valueOf(cursor.equals(today)));
-			cell.put("count", Integer.valueOf(countByDate.containsKey(dateKey) ? countByDate.get(dateKey) : 0));
+			cell.put("previews",
+					previewItemsByDate.containsKey(dateKey) ? previewItemsByDate.get(dateKey) : new ArrayList<Map<String, String>>());
+			cell.put("overflow", Integer.valueOf(overflowCountByDate.containsKey(dateKey) ? overflowCountByDate.get(dateKey) : 0));
 			cells.add(cell);
 		}
 		return cells;
+	}
+
+	private Integer parseIntOrNull(String text) {
+		if (isBlank(text)) {
+			return null;
+		}
+		try {
+			return Integer.valueOf(text.trim());
+		} catch (NumberFormatException ex) {
+			return null;
+		}
+	}
+
+	private String normalizeColorCode(String colorCode) {
+		if (isBlank(colorCode)) {
+			return null;
+		}
+		String value = colorCode.trim();
+		if (!value.startsWith("#")) {
+			value = "#" + value;
+		}
+		if (value.length() != 7) {
+			return null;
+		}
+		for (int i = 1; i < value.length(); i++) {
+			char c = value.charAt(i);
+			boolean hex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+			if (!hex) {
+				return null;
+			}
+		}
+		return value;
+	}
+
+	private String resolveShiftLabel(StoreSchedule schedule) {
+		LocalTime start = parseLocalTimeOrNull(schedule == null ? null : schedule.getStart_time());
+		LocalTime end = parseLocalTimeOrNull(schedule == null ? null : schedule.getEnd_time());
+		if (start == null && end == null) {
+			return "미들";
+		}
+		if (start != null && (start.isBefore(LocalTime.of(10, 0)) || start.equals(LocalTime.of(10, 0)))) {
+			return "오픈";
+		}
+		if ((start != null && (start.isAfter(LocalTime.of(17, 0)) || start.equals(LocalTime.of(17, 0))))
+				|| (end != null && (end.isAfter(LocalTime.of(21, 0)) || end.equals(LocalTime.of(21, 0))))) {
+			return "마감";
+		}
+		return "미들";
 	}
 
 	private void addHealthCertificateInfo(Model model, StoreEmployee employee) {

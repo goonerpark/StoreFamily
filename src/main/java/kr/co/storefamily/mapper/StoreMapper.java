@@ -10,6 +10,7 @@ import kr.co.storefamily.model.StoreEmployee;
 import kr.co.storefamily.model.StoreJoinRequest;
 import kr.co.storefamily.model.StoreMember;
 import kr.co.storefamily.model.StoreSchedule;
+import kr.co.storefamily.model.SchedulePart;
 
 @Mapper
 public interface StoreMapper {
@@ -23,6 +24,7 @@ public interface StoreMapper {
 	Store findStoreByIdAndCeoBno(@Param("storeId") String storeId, @Param("ceoBno") int ceoBno);
 	Store findStoreByStoreCode(String storeCode);
 	StoreMember findStoreMember(@Param("storeId") String storeId, @Param("memberBno") int memberBno);
+	StoreMember findApprovedStoreMember(@Param("storeId") String storeId, @Param("memberBno") int memberBno);
 	List<StoreJoinRequest> findPendingJoinRequestsByStoreId(String storeId);
 	int countPendingJoinRequestsByStoreId(String storeId);
 	int approveStoreMember(@Param("storeMemberId") int storeMemberId, @Param("storeId") String storeId);
@@ -37,12 +39,28 @@ public interface StoreMapper {
 			@Param("monthEnd") String monthEnd);
 	List<StoreSchedule> findSchedulesByStoreAndDate(@Param("storeId") String storeId, @Param("workDate") String workDate);
 	StoreSchedule findScheduleByStoreAndId(@Param("storeId") String storeId, @Param("scheduleId") int scheduleId);
+	int countScheduleOverlapForCreate(@Param("storeId") String storeId, @Param("storeEmployeeBno") int storeEmployeeBno,
+			@Param("workDate") String workDate, @Param("startTime") String startTime, @Param("endTime") String endTime);
+	int countScheduleOverlapForUpdate(@Param("storeId") String storeId, @Param("scheduleId") int scheduleId,
+			@Param("storeEmployeeBno") int storeEmployeeBno, @Param("workDate") String workDate,
+			@Param("startTime") String startTime, @Param("endTime") String endTime);
 	int insertScheduleForStore(@Param("storeId") String storeId, @Param("storeEmployeeBno") int storeEmployeeBno,
 			@Param("workDate") String workDate, @Param("startTime") String startTime, @Param("endTime") String endTime,
-			@Param("workMinutes") int workMinutes, @Param("status") String status, @Param("memo") String memo);
+			@Param("workMinutes") int workMinutes, @Param("status") String status, @Param("memo") String memo,
+			@Param("partBno") Integer partBno);
 	int updateScheduleForStore(@Param("storeId") String storeId, @Param("scheduleId") int scheduleId,
 			@Param("storeEmployeeBno") int storeEmployeeBno, @Param("workDate") String workDate,
 			@Param("startTime") String startTime, @Param("endTime") String endTime, @Param("workMinutes") int workMinutes,
-			@Param("status") String status, @Param("memo") String memo);
+			@Param("status") String status, @Param("memo") String memo, @Param("partBno") Integer partBno);
 	int deleteScheduleForStore(@Param("storeId") String storeId, @Param("scheduleId") int scheduleId);
+	List<SchedulePart> findSchedulePartsByStoreId(@Param("storeId") String storeId);
+	SchedulePart findSchedulePartByStoreAndId(@Param("storeId") String storeId, @Param("partBno") int partBno);
+	int insertSchedulePart(@Param("storeId") String storeId, @Param("partName") String partName,
+			@Param("startTime") String startTime, @Param("endTime") String endTime,
+			@Param("colorCode") String colorCode, @Param("sortOrder") Integer sortOrder);
+	int updateSchedulePart(@Param("storeId") String storeId, @Param("partBno") int partBno,
+			@Param("partName") String partName, @Param("startTime") String startTime, @Param("endTime") String endTime,
+			@Param("colorCode") String colorCode, @Param("sortOrder") Integer sortOrder);
+	int clearSchedulePartRefs(@Param("storeId") String storeId, @Param("partBno") int partBno);
+	int deleteSchedulePart(@Param("storeId") String storeId, @Param("partBno") int partBno);
 }
