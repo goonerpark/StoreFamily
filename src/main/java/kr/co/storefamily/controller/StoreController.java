@@ -1,11 +1,19 @@
 package kr.co.storefamily.controller;
 
 import java.security.SecureRandom;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.http.HttpSession;
 
@@ -26,6 +34,7 @@ import kr.co.storefamily.model.Store;
 import kr.co.storefamily.model.StoreEmployee;
 import kr.co.storefamily.model.StoreJoinRequest;
 import kr.co.storefamily.model.StoreMember;
+import kr.co.storefamily.model.StoreSchedule;
 
 @Controller
 public class StoreController {
@@ -37,6 +46,9 @@ public class StoreController {
 	private static final int STORE_ID_LENGTH = 12;
 	private static final int STORE_CODE_LENGTH = 8;
 	private static final SecureRandom RANDOM = new SecureRandom();
+	private static final String SCHEDULE_STATUS_SCHEDULED = "SCHEDULED";
+	private static final String SCHEDULE_STATUS_COMPLETED = "COMPLETED";
+	private static final String SCHEDULE_STATUS_CANCELED = "CANCELED";
 
 	@Autowired
 	private StoreMapper storeMapper;
@@ -424,6 +436,186 @@ public class StoreController {
 		return "redirect:/stores/" + ownedStore.getStore_id() + "/employees/" + employeeId;
 	}
 
+	@GetMapping("/stores/{storeId}/schedules")
+	public String storeScheduleCalendar(@PathVariable("storeId") String storeId,
+			@RequestParam(value = "month", required = false) String monthText,
+			@RequestParam(value = "date", required = false) String dateText,
+			@RequestParam(value = "editScheduleId", required = false) Integer editScheduleId,
+			HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		YearMonth month = parseYearMonthOrDefault(monthText, YearMonth.now());
+		LocalDate selectedDate = parseLocalDateOrNull(dateText);
+		if (selectedDate == null || !YearMonth.from(selectedDate).equals(month)) {
+			selectedDate = month.atDay(1);
+		}
+
+		String monthStart = month.atDay(1).toString();
+		String monthEnd = month.atEndOfMonth().toString();
+		String selectedDateText = selectedDate.toString();
+
+		List<StoreEmployee> employees = storeMapper.findApprovedEmployeesByStoreId(ownedStore.getStore_id());
+		List<StoreSchedule> monthSchedules = storeMapper.findSchedulesByStoreAndMonth(ownedStore.getStore_id(), monthStart, monthEnd);
+		List<StoreSchedule> daySchedules = storeMapper.findSchedulesByStoreAndDate(ownedStore.getStore_id(), selectedDateText);
+
+		StoreSchedule editSchedule = null;
+		if (editScheduleId != null) {
+			editSchedule = storeMapper.findScheduleByStoreAndId(ownedStore.getStore_id(), editScheduleId);
+			if (editSchedule == null) {
+				redirectAttributes.addFlashAttribute("message", "수정할 스케줄 정보를 찾을 수 없습니다.");
+				return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), selectedDateText);
+			}
+		}
+
+		Map<String, Integer> scheduleCountByDate = new HashMap<String, Integer>();
+		for (StoreSchedule schedule : monthSchedules) {
+			if (schedule.getWork_date() == null) {
+				continue;
+			}
+			Integer count = scheduleCountByDate.get(schedule.getWork_date());
+			scheduleCountByDate.put(schedule.getWork_date(), count == null ? 1 : count + 1);
+		}
+
+		model.addAttribute("myStore", ownedStore);
+		model.addAttribute("month", month.toString());
+		model.addAttribute("selectedDate", selectedDateText);
+		model.addAttribute("prevMonth", month.minusMonths(1).toString());
+		model.addAttribute("nextMonth", month.plusMonths(1).toString());
+		model.addAttribute("calendarCells", buildCalendarCells(month, selectedDate, scheduleCountByDate));
+		model.addAttribute("employees", employees);
+		model.addAttribute("daySchedules", daySchedules);
+		model.addAttribute("editSchedule", editSchedule);
+		model.addAttribute("statusOptions", Arrays.asList(SCHEDULE_STATUS_SCHEDULED, SCHEDULE_STATUS_COMPLETED, SCHEDULE_STATUS_CANCELED));
+		return "Store/store_schedule_calendar";
+	}
+
+	@PostMapping("/stores/{storeId}/schedules")
+	@Transactional
+	public String createStoreSchedule(@PathVariable("storeId") String storeId,
+			@RequestParam("storeEmployeeBno") Integer storeEmployeeBno,
+			@RequestParam("workDate") String workDate,
+			@RequestParam("startTime") String startTime,
+			@RequestParam("endTime") String endTime,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "memo", required = false) String memo,
+			@RequestParam(value = "month", required = false) String monthText,
+			@RequestParam(value = "selectedDate", required = false) String selectedDateText,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		LocalDate parsedWorkDate = parseLocalDateOrNull(workDate);
+		LocalTime parsedStartTime = parseLocalTimeOrNull(startTime);
+		LocalTime parsedEndTime = parseLocalTimeOrNull(endTime);
+		YearMonth month = parseYearMonthOrDefault(monthText,
+				parsedWorkDate == null ? YearMonth.now() : YearMonth.from(parsedWorkDate));
+
+		if (storeEmployeeBno == null || parsedWorkDate == null || parsedStartTime == null || parsedEndTime == null) {
+			redirectAttributes.addFlashAttribute("message", "스케줄 등록값을 다시 확인해 주세요.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(),
+					fallbackDateForRedirect(selectedDateText, parsedWorkDate, month));
+		}
+
+		if (!parsedEndTime.isAfter(parsedStartTime)) {
+			redirectAttributes.addFlashAttribute("message", "종료 시간은 시작 시간보다 늦어야 합니다.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+		}
+
+		int workMinutes = (int) ChronoUnit.MINUTES.between(parsedStartTime, parsedEndTime);
+		String normalizedStatus = normalizeScheduleStatus(status);
+		String normalizedMemo = normalizeScheduleMemo(memo);
+		int inserted = storeMapper.insertScheduleForStore(ownedStore.getStore_id(), storeEmployeeBno.intValue(),
+				parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString(), workMinutes,
+				normalizedStatus, normalizedMemo);
+
+		if (inserted == 1) {
+			redirectAttributes.addFlashAttribute("message", "스케줄이 등록되었습니다.");
+		} else {
+			redirectAttributes.addFlashAttribute("message", "등록 대상 직원이 없거나 권한이 없습니다.");
+		}
+		return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+	}
+
+	@PostMapping("/stores/{storeId}/schedules/{scheduleId}")
+	@Transactional
+	public String updateStoreSchedule(@PathVariable("storeId") String storeId,
+			@PathVariable("scheduleId") int scheduleId,
+			@RequestParam("storeEmployeeBno") Integer storeEmployeeBno,
+			@RequestParam("workDate") String workDate,
+			@RequestParam("startTime") String startTime,
+			@RequestParam("endTime") String endTime,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "memo", required = false) String memo,
+			@RequestParam(value = "month", required = false) String monthText,
+			@RequestParam(value = "selectedDate", required = false) String selectedDateText,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		LocalDate parsedWorkDate = parseLocalDateOrNull(workDate);
+		LocalTime parsedStartTime = parseLocalTimeOrNull(startTime);
+		LocalTime parsedEndTime = parseLocalTimeOrNull(endTime);
+		YearMonth month = parseYearMonthOrDefault(monthText,
+				parsedWorkDate == null ? YearMonth.now() : YearMonth.from(parsedWorkDate));
+
+		if (storeEmployeeBno == null || parsedWorkDate == null || parsedStartTime == null || parsedEndTime == null) {
+			redirectAttributes.addFlashAttribute("message", "스케줄 수정값을 다시 확인해 주세요.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(),
+					fallbackDateForRedirect(selectedDateText, parsedWorkDate, month));
+		}
+
+		if (!parsedEndTime.isAfter(parsedStartTime)) {
+			redirectAttributes.addFlashAttribute("message", "종료 시간은 시작 시간보다 늦어야 합니다.");
+			return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+		}
+
+		int workMinutes = (int) ChronoUnit.MINUTES.between(parsedStartTime, parsedEndTime);
+		String normalizedStatus = normalizeScheduleStatus(status);
+		String normalizedMemo = normalizeScheduleMemo(memo);
+		int updated = storeMapper.updateScheduleForStore(ownedStore.getStore_id(), scheduleId, storeEmployeeBno.intValue(),
+				parsedWorkDate.toString(), parsedStartTime.toString(), parsedEndTime.toString(), workMinutes,
+				normalizedStatus, normalizedMemo);
+
+		if (updated == 1) {
+			redirectAttributes.addFlashAttribute("message", "스케줄이 수정되었습니다.");
+		} else {
+			redirectAttributes.addFlashAttribute("message", "수정할 스케줄이 없거나 권한이 없습니다.");
+		}
+		return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), parsedWorkDate.toString());
+	}
+
+	@PostMapping("/stores/{storeId}/schedules/{scheduleId}/delete")
+	@Transactional
+	public String deleteStoreSchedule(@PathVariable("storeId") String storeId,
+			@PathVariable("scheduleId") int scheduleId,
+			@RequestParam(value = "month", required = false) String monthText,
+			@RequestParam(value = "selectedDate", required = false) String selectedDateText,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Store ownedStore = getOwnedStore(storeId, session, redirectAttributes);
+		if (ownedStore == null) {
+			return "redirect:/store/my";
+		}
+
+		YearMonth month = parseYearMonthOrDefault(monthText, YearMonth.now());
+		LocalDate selectedDate = parseLocalDateOrNull(selectedDateText);
+		String redirectDate = selectedDate == null ? month.atDay(1).toString() : selectedDate.toString();
+
+		int deleted = storeMapper.deleteScheduleForStore(ownedStore.getStore_id(), scheduleId);
+		if (deleted == 1) {
+			redirectAttributes.addFlashAttribute("message", "스케줄이 삭제되었습니다.");
+		} else {
+			redirectAttributes.addFlashAttribute("message", "삭제할 스케줄이 없거나 권한이 없습니다.");
+		}
+		return "redirect:" + buildScheduleRedirectUrl(ownedStore.getStore_id(), month.toString(), redirectDate);
+	}
+
 	private Integer getLoginMemberBno(HttpSession session, RedirectAttributes redirectAttributes) {
 		String loginId = (String) session.getAttribute("id");
 		if (loginId == null) {
@@ -541,6 +733,113 @@ public class StoreController {
 		return value.trim();
 	}
 
+	private YearMonth parseYearMonthOrDefault(String text, YearMonth fallback) {
+		if (isBlank(text)) {
+			return fallback;
+		}
+		try {
+			return YearMonth.parse(text.trim());
+		} catch (DateTimeParseException ex) {
+			return fallback;
+		}
+	}
+
+	private LocalDate parseLocalDateOrNull(String text) {
+		if (isBlank(text)) {
+			return null;
+		}
+		try {
+			return LocalDate.parse(text.trim());
+		} catch (DateTimeParseException ex) {
+			return null;
+		}
+	}
+
+	private LocalTime parseLocalTimeOrNull(String text) {
+		if (isBlank(text)) {
+			return null;
+		}
+		String trimmed = text.trim();
+		try {
+			return LocalTime.parse(trimmed);
+		} catch (DateTimeParseException ex) {
+			if (trimmed.length() == 5) {
+				try {
+					return LocalTime.parse(trimmed + ":00");
+				} catch (DateTimeParseException ignored) {
+					return null;
+				}
+			}
+			return null;
+		}
+	}
+
+	private String normalizeScheduleStatus(String statusText) {
+		if (isBlank(statusText)) {
+			return SCHEDULE_STATUS_SCHEDULED;
+		}
+		String normalized = statusText.trim().toUpperCase(Locale.ROOT);
+		if (SCHEDULE_STATUS_COMPLETED.equals(normalized)) {
+			return SCHEDULE_STATUS_COMPLETED;
+		}
+		if (SCHEDULE_STATUS_CANCELED.equals(normalized)) {
+			return SCHEDULE_STATUS_CANCELED;
+		}
+		return SCHEDULE_STATUS_SCHEDULED;
+	}
+
+	private String normalizeScheduleMemo(String memo) {
+		if (isBlank(memo)) {
+			return null;
+		}
+		String trimmed = memo.trim();
+		if (trimmed.length() > 255) {
+			return trimmed.substring(0, 255);
+		}
+		return trimmed;
+	}
+
+	private String fallbackDateForRedirect(String selectedDateText, LocalDate parsedWorkDate, YearMonth month) {
+		if (parsedWorkDate != null) {
+			return parsedWorkDate.toString();
+		}
+		LocalDate selectedDate = parseLocalDateOrNull(selectedDateText);
+		if (selectedDate != null) {
+			return selectedDate.toString();
+		}
+		return month.atDay(1).toString();
+	}
+
+	private String buildScheduleRedirectUrl(String storeId, String month, String selectedDate) {
+		return "/stores/" + storeId + "/schedules?month=" + month + "&date=" + selectedDate;
+	}
+
+	private List<Map<String, Object>> buildCalendarCells(YearMonth month, LocalDate selectedDate, Map<String, Integer> countByDate) {
+		List<Map<String, Object>> cells = new ArrayList<Map<String, Object>>();
+		LocalDate start = month.atDay(1);
+		while (start.getDayOfWeek() != DayOfWeek.SUNDAY) {
+			start = start.minusDays(1);
+		}
+		LocalDate end = month.atEndOfMonth();
+		while (end.getDayOfWeek() != DayOfWeek.SATURDAY) {
+			end = end.plusDays(1);
+		}
+
+		LocalDate today = LocalDate.now();
+		for (LocalDate cursor = start; !cursor.isAfter(end); cursor = cursor.plusDays(1)) {
+			Map<String, Object> cell = new HashMap<String, Object>();
+			String dateKey = cursor.toString();
+			cell.put("date", dateKey);
+			cell.put("day", Integer.valueOf(cursor.getDayOfMonth()));
+			cell.put("currentMonth", Boolean.valueOf(YearMonth.from(cursor).equals(month)));
+			cell.put("selected", Boolean.valueOf(cursor.equals(selectedDate)));
+			cell.put("today", Boolean.valueOf(cursor.equals(today)));
+			cell.put("count", Integer.valueOf(countByDate.containsKey(dateKey) ? countByDate.get(dateKey) : 0));
+			cells.add(cell);
+		}
+		return cells;
+	}
+
 	private void addHealthCertificateInfo(Model model, StoreEmployee employee) {
 		if (employee == null || isBlank(employee.getHealth())) {
 			model.addAttribute("healthExpiryDate", null);
@@ -552,7 +851,7 @@ public class StoreController {
 			LocalDate registeredDate = LocalDate.parse(employee.getHealth().trim());
 			LocalDate expiryDate = registeredDate.plusYears(1);
 			LocalDate today = LocalDate.now();
-			long days = java.time.temporal.ChronoUnit.DAYS.between(today, expiryDate);
+			long days = ChronoUnit.DAYS.between(today, expiryDate);
 
 			model.addAttribute("healthExpiryDate", expiryDate.toString());
 			if (days >= 0) {

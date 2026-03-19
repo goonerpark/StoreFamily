@@ -182,4 +182,129 @@
 		  and position = '직원'
 	</update>
 
+	<select id="findSchedulesByStoreAndMonth" resultType="StoreSchedule">
+		select
+			sc.bno,
+			sc.store_employee_bno,
+			sc.work_date,
+			sc.start_time,
+			sc.end_time,
+			sc.work_minutes,
+			sc.status,
+			sc.memo,
+			sc.created_at,
+			sc.updated_at,
+			sm.member_bno,
+			m.name as employee_name,
+			m.id as employee_id
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		join member m on m.bno = sm.member_bno
+		where sm.store_id = #{storeId}
+		  and sc.work_date between #{monthStart} and #{monthEnd}
+		  and sm.position = '직원'
+		order by sc.work_date asc, sc.start_time asc, sc.bno asc
+	</select>
+
+	<select id="findSchedulesByStoreAndDate" resultType="StoreSchedule">
+		select
+			sc.bno,
+			sc.store_employee_bno,
+			sc.work_date,
+			sc.start_time,
+			sc.end_time,
+			sc.work_minutes,
+			sc.status,
+			sc.memo,
+			sc.created_at,
+			sc.updated_at,
+			sm.member_bno,
+			m.name as employee_name,
+			m.id as employee_id
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		join member m on m.bno = sm.member_bno
+		where sm.store_id = #{storeId}
+		  and sc.work_date = #{workDate}
+		  and sm.position = '직원'
+		order by sc.start_time asc, sc.bno asc
+	</select>
+
+	<select id="findScheduleByStoreAndId" resultType="StoreSchedule">
+		select
+			sc.bno,
+			sc.store_employee_bno,
+			sc.work_date,
+			sc.start_time,
+			sc.end_time,
+			sc.work_minutes,
+			sc.status,
+			sc.memo,
+			sc.created_at,
+			sc.updated_at,
+			sm.member_bno,
+			m.name as employee_name,
+			m.id as employee_id
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		join member m on m.bno = sm.member_bno
+		where sm.store_id = #{storeId}
+		  and sc.bno = #{scheduleId}
+		  and sm.position = '직원'
+		limit 1
+	</select>
+
+	<insert id="insertScheduleForStore">
+		insert into schedule (
+			store_employee_bno,
+			work_date,
+			start_time,
+			end_time,
+			work_minutes,
+			status,
+			memo
+		)
+		select
+			sm.store_member_id,
+			#{workDate},
+			#{startTime},
+			#{endTime},
+			#{workMinutes},
+			#{status},
+			#{memo}
+		from store_member sm
+		where sm.store_member_id = #{storeEmployeeBno}
+		  and sm.store_id = #{storeId}
+		  and sm.position = '직원'
+		  and sm.chk = 1
+	</insert>
+
+	<update id="updateScheduleForStore">
+		update schedule sc
+		join store_member sm_target on sm_target.store_member_id = #{storeEmployeeBno}
+		join store_member sm_owner on sm_owner.store_member_id = sc.store_employee_bno
+		set sc.store_employee_bno = sm_target.store_member_id,
+			sc.work_date = #{workDate},
+			sc.start_time = #{startTime},
+			sc.end_time = #{endTime},
+			sc.work_minutes = #{workMinutes},
+			sc.status = #{status},
+			sc.memo = #{memo}
+		where sc.bno = #{scheduleId}
+		  and sm_owner.store_id = #{storeId}
+		  and sm_owner.position = '직원'
+		  and sm_target.store_id = #{storeId}
+		  and sm_target.position = '직원'
+		  and sm_target.chk = 1
+	</update>
+
+	<delete id="deleteScheduleForStore">
+		delete sc
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		where sc.bno = #{scheduleId}
+		  and sm.store_id = #{storeId}
+		  and sm.position = '직원'
+	</delete>
+
 </mapper>

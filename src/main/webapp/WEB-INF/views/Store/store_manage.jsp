@@ -1,4 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html>
@@ -32,11 +32,9 @@
 	.menu-card, .summary-card { padding: 20px; }
 	.section-title { margin: 0 0 14px; font-size: 20px; }
 	.menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-	.menu-link, .menu-disabled { display: block; padding: 14px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--text); background: #fff; }
-	.menu-disabled { color: var(--muted); background: #f9fafb; cursor: not-allowed; }
+	.menu-link { display: block; padding: 14px; border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--text); background: #fff; }
 	.menu-name { font-weight: 700; }
 	.menu-desc { margin-top: 6px; font-size: 13px; color: var(--muted); }
-	.badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size: 11px; background: #eef2ff; color: #3b5bdb; vertical-align: middle; }
 	.summary-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
 	.summary-item { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 	.summary-label { color: var(--muted); font-size: 13px; }
@@ -99,16 +97,16 @@
 				</a>
 				<a class="menu-link" href="${pageContext.request.contextPath}/stores/${dashboard.storeId}/approvals">
 					<div class="menu-name">가입 승인 관리</div>
-					<div class="menu-desc">가입 요청 확인/거절 관리</div>
+					<div class="menu-desc">가입 요청 확인 및 승인/거절 처리</div>
+				</a>
+				<a class="menu-link" href="${pageContext.request.contextPath}/stores/${dashboard.storeId}/schedules">
+					<div class="menu-name">스케줄 캘린더</div>
+					<div class="menu-desc">월별 근무 스케줄 등록/수정/삭제</div>
 				</a>
 				<a class="menu-link" href="${pageContext.request.contextPath}/my-stores">
 					<div class="menu-name">내 매장 목록</div>
 					<div class="menu-desc">보유한 전체 매장 목록으로 이동</div>
 				</a>
-				<div class="menu-disabled">
-					<div class="menu-name">스케줄 관리<span class="badge">준비 중</span></div>
-					<div class="menu-desc">근무 일정 관리 기능 예정</div>
-				</div>
 			</div>
 		</div>
 
