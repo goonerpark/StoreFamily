@@ -1,170 +1,326 @@
-package kr.co.storefamily.service;
+﻿package kr.co.storefamily.service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import kr.co.storefamily.model.Fill;
-import kr.co.storefamily.model.Resume;
-import kr.co.storefamily.model.Schedule;
 import kr.co.storefamily.mapper.FillMapper;
+import kr.co.storefamily.model.FillApply;
+import kr.co.storefamily.model.FillPost;
+import kr.co.storefamily.model.Store;
+import kr.co.storefamily.model.StoreMember;
+import kr.co.storefamily.model.StoreSchedule;
 
 @Service
 public class FillServiceImpl implements FillService {
 
+	private static final String POSITION_CEO = "\uC0AC\uC7A5";
+	private static final String POSITION_MANAGER = "\uAD00\uB9AC\uC790";
+	private static final String POSITION_EMPLOYEE = "\uC9C1\uC6D0";
+
+	private static final int FILL_CHK_RECRUITING = 0;
+	private static final int FILL_CHK_APPROVED = 1;
+	private static final int FILL_CHK_CLOSED = 2;
+	private static final int FILL_CHK_CANCELED = 3;
+
+	private static final int APPLY_CHK_PENDING = 0;
+	private static final int APPLY_CHK_APPROVED = 1;
+	private static final int APPLY_CHK_REJECTED = 2;
+
 	@Autowired
-	private FillMapper FillMapper;
-	
+	private FillMapper fillMapper;
+
 	@Override
-	public List<Fill> my_fill_list(String code, String id) {
-		return this.FillMapper.my_fill_list(code,id);
+	public int getLoginMemberBno(String loginId) {
+		Integer memberBno = fillMapper.findMemberBnoById(loginId);
+		if (memberBno == null) {
+			throw new IllegalArgumentException("Member not found.");
+		}
+		return memberBno.intValue();
 	}
 
 	@Override
-	public List<Schedule> my_schedule(String code, String id) {
-		return this.FillMapper.my_schedule(code,id);
+	public String findDefaultStoreId(int memberBno) {
+		return fillMapper.findFirstAccessibleStoreId(memberBno);
 	}
 
 	@Override
-	public Schedule this_schedule(int schedule_bno) {
-		return this.FillMapper.this_schedule(schedule_bno);
+	public Store findStore(String storeId) {
+		return fillMapper.findStoreById(storeId);
 	}
 
 	@Override
-	public int fill_write_ok(Fill fill) {
-		return this.FillMapper.fill_write_ok(fill);
+	public StoreMember findApprovedStoreMember(String storeId, int memberBno) {
+		return fillMapper.findApprovedStoreMember(storeId, memberBno);
 	}
 
 	@Override
-	public List<Fill> my_store_fill_list(String code) {
-		return this.FillMapper.my_store_fill_list(code);
+	public boolean canManageStore(String storeId, int memberBno) {
+		StoreMember member = requireApprovedMember(storeId, memberBno);
+		String position = member.getPosition();
+		return POSITION_CEO.equals(position) || POSITION_MANAGER.equals(position);
 	}
 
 	@Override
-	public List<Fill> fill_all_list() {
-		return this.FillMapper.fill_all_list();
+	public List<FillPost> getStoreFillList(String storeId) {
+		return fillMapper.findFillListByStore(storeId);
 	}
 
 	@Override
-	public Fill fill_apply_content(int bno) {
-		return this.FillMapper.fill_apply_content(bno);
+	public FillPost getStoreFillDetail(String storeId, int fillBno) {
+		return fillMapper.findFillDetailByStore(storeId, fillBno);
 	}
 
 	@Override
-	public int fill_apply_count(int bno,String id) {
-		return this.FillMapper.fill_apply_count(bno,id);
+	public List<FillApply> getFillApplyList(int fillBno) {
+		return fillMapper.findFillApplyList(fillBno);
 	}
 
 	@Override
-	public String fill_local_do(String local_do) {
-		return this.FillMapper.fill_local_do(local_do);
-	}
-	
-	@Override
-	public String fill_local_si(String local_si, String local_do) {
-		return this.FillMapper.fill_local_si(local_si, local_do);
-	}
-	
-	@Override
-	public List<Fill> this_apply_list(int bno) {
-		return this.FillMapper.this_apply_list(bno);
+	public StoreSchedule getScheduleForFillCreate(String storeId, int scheduleBno, int memberBno) {
+		return fillMapper.findScheduleForFillCreate(storeId, scheduleBno, memberBno);
 	}
 
 	@Override
-	public int fill_registrar_ok(int bno) {
-		return this.FillMapper.fill_registrar_ok(bno);
+	@Transactional
+	public void createFill(String storeId, int scheduleBno, int memberBno, String loginId, String loginName, String title,
+			String content, String applyStartDay, String applyEndDay) {
+		requireStoreAndMember(storeId, memberBno);
+
+		StoreSchedule schedule = fillMapper.findScheduleForFillCreate(storeId, scheduleBno, memberBno);
+		if (schedule == null) {
+			throw new IllegalArgumentException("Only your own schedule can be requested as fill.");
+		}
+
+		Store store = requireStore(storeId);
+		String normalizedTitle = normalizeRequiredText(title, "Title is required.");
+		String normalizedContent = normalizeRequiredText(content, "Content is required.");
+		LocalDate startDate = parseRequiredDate(applyStartDay, "Invalid applyStartDay format (YYYY-MM-DD).");
+		LocalDate endDate = parseRequiredDate(applyEndDay, "Invalid applyEndDay format (YYYY-MM-DD).");
+		if (endDate.isBefore(startDate)) {
+			throw new IllegalArgumentException("Apply end date must be on or after apply start date.");
+		}
+
+		FillPost fill = new FillPost();
+		fill.setTitle(normalizedTitle);
+		fill.setContent(normalizedContent);
+		fill.setName(isBlank(loginName) ? schedule.getEmployee_name() : loginName.trim());
+		fill.setId(loginId);
+		fill.setFill_day(schedule.getWork_date());
+		fill.setFill_start_time(normalizeTimeString(schedule.getStart_time()));
+		fill.setFill_end_time(normalizeTimeString(schedule.getEnd_time()));
+		fill.setFill_di_time(isBlank(schedule.getPart_name()) ? "" : schedule.getPart_name());
+		fill.setSchedule_bno(schedule.getBno());
+		fill.setCode(store.getStore_code());
+		fill.setApply_start_day(startDate.toString());
+		fill.setApply_end_day(endDate.toString());
+		fill.setChk(FILL_CHK_RECRUITING);
+		fill.setApply_su(0);
+
+		if (fillMapper.insertFill(fill) != 1) {
+			throw new IllegalArgumentException("Failed to create fill request.");
+		}
 	}
 
 	@Override
-	public void fill_apply_add(Fill fill) {
-		this.FillMapper.fill_apply_add(fill);
+	@Transactional
+	public void applyFill(String storeId, int fillBno, int memberBno, String loginId, String loginName) {
+		StoreMember storeMember = requireApprovedMember(storeId, memberBno);
+		if (!POSITION_EMPLOYEE.equals(storeMember.getPosition())) {
+			throw new IllegalArgumentException("Only employees can apply.");
+		}
+
+		FillPost fill = requireFill(storeId, fillBno);
+		if (fill.getChk() == null || fill.getChk().intValue() != FILL_CHK_RECRUITING) {
+			throw new IllegalArgumentException("Fill request is not open.");
+		}
+		if (loginId.equals(fill.getId())) {
+			throw new IllegalArgumentException("Cannot apply to your own request.");
+		}
+
+		LocalDate today = LocalDate.now();
+		LocalDate startDate = parseRequiredDate(fill.getApply_start_day(), "Invalid apply_start_day data.");
+		LocalDate endDate = parseRequiredDate(fill.getApply_end_day(), "Invalid apply_end_day data.");
+		if (today.isBefore(startDate) || today.isAfter(endDate)) {
+			throw new IllegalArgumentException("Apply period is closed.");
+		}
+
+		if (fillMapper.countActiveApplyByFillAndId(fillBno, loginId) > 0) {
+			throw new IllegalArgumentException("Already applied.");
+		}
+
+		FillApply apply = new FillApply();
+		apply.setW_name(fill.getName());
+		apply.setM_name(isBlank(loginName) ? loginId : loginName.trim());
+		apply.setId(loginId);
+		apply.setCode(fill.getCode());
+		apply.setSchedule_bno(fill.getSchedule_bno());
+		apply.setFill_bno(fill.getBno());
+		apply.setW_code(fill.getCode());
+		apply.setChk(APPLY_CHK_PENDING);
+		apply.setResume_bno(0);
+		apply.setResume_title(null);
+
+		if (fillMapper.insertFillApply(apply) != 1) {
+			throw new IllegalArgumentException("Failed to apply.");
+		}
+		fillMapper.updateFillApplyCount(fillBno);
 	}
 
 	@Override
-	public int fill_registrar_cancle(int bno) {
-		return this.FillMapper.fill_registrar_cancle(bno);
+	@Transactional
+	public void cancelMyApply(String storeId, int fillBno, int memberBno, String loginId) {
+		requireStoreAndMember(storeId, memberBno);
+		requireFill(storeId, fillBno);
+		int updated = fillMapper.cancelMyApply(fillBno, loginId);
+		if (updated != 1) {
+			throw new IllegalArgumentException("No pending apply to cancel.");
+		}
+		fillMapper.updateFillApplyCount(fillBno);
 	}
 
 	@Override
-	public String resume_title(int resume_bno) {
-		return this.FillMapper.resume_title(resume_bno);
-	}
-	
-	@Override
-	public int fill_apply(Fill fill) {
-		return this.FillMapper.fill_apply(fill);
-	}
+	@Transactional
+	public void approveApply(String storeId, int fillBno, int applyBno, int memberBno) {
+		if (!canManageStore(storeId, memberBno)) {
+			throw new IllegalArgumentException("No approval permission.");
+		}
 
-	@Override
-	public void fill_apply_su_up(int fill_bno) {
-		this.FillMapper.fill_apply_su_up(fill_bno);
-	}
+		FillPost fill = requireFill(storeId, fillBno);
+		if (fill.getChk() == null || fill.getChk().intValue() != FILL_CHK_RECRUITING) {
+			throw new IllegalArgumentException("Fill request is not open.");
+		}
 
-	@Override
-	public int fill_apply_cancle(int bno,String id) {
-		return this.FillMapper.fill_apply_cancle(bno,id);
-	}
+		FillApply apply = fillMapper.findFillApplyByStore(storeId, fillBno, applyBno);
+		if (apply == null) {
+			throw new IllegalArgumentException("Apply row not found.");
+		}
+		if (apply.getChk() == null || apply.getChk().intValue() != APPLY_CHK_PENDING) {
+			throw new IllegalArgumentException("Only pending apply can be approved.");
+		}
 
-	@Override
-	public int fill_apply_resume_change(Fill fill) {
-		return this.FillMapper.fill_apply_resume_change(fill);
-	}
-
-	@Override
-	public void fill_apply_su_down(int fill_bno) {
-		this.FillMapper.fill_apply_su_down(fill_bno);
+		fillMapper.updateFillApplyStatus(applyBno, APPLY_CHK_APPROVED);
+		fillMapper.updateOtherPendingApplyStatus(fillBno, applyBno, APPLY_CHK_REJECTED);
+		fillMapper.updateFillStatus(fillBno, FILL_CHK_APPROVED);
+		fillMapper.updateFillApplyCount(fillBno);
 	}
 
 	@Override
-	public Fill apply_content(int bno) {
-		return this.FillMapper.apply_content(bno);
+	@Transactional
+	public void rejectApply(String storeId, int fillBno, int applyBno, int memberBno) {
+		if (!canManageStore(storeId, memberBno)) {
+			throw new IllegalArgumentException("No reject permission.");
+		}
+
+		requireFill(storeId, fillBno);
+		FillApply apply = fillMapper.findFillApplyByStore(storeId, fillBno, applyBno);
+		if (apply == null) {
+			throw new IllegalArgumentException("Apply row not found.");
+		}
+		if (apply.getChk() == null || apply.getChk().intValue() != APPLY_CHK_PENDING) {
+			throw new IllegalArgumentException("Only pending apply can be rejected.");
+		}
+
+		fillMapper.updateFillApplyStatus(applyBno, APPLY_CHK_REJECTED);
+		fillMapper.updateFillApplyCount(fillBno);
 	}
 
 	@Override
-	public int fill_apply_chk_ok(int bno) {
-		return this.FillMapper.fill_apply_chk_ok(bno);
+	@Transactional
+	public void closeFill(String storeId, int fillBno, int memberBno) {
+		if (!canManageStore(storeId, memberBno)) {
+			throw new IllegalArgumentException("No close permission.");
+		}
+
+		FillPost fill = requireFill(storeId, fillBno);
+		if (fill.getChk() == null || fill.getChk().intValue() != FILL_CHK_RECRUITING) {
+			throw new IllegalArgumentException("Only recruiting fill can be closed.");
+		}
+		fillMapper.updateFillStatus(fillBno, FILL_CHK_CLOSED);
 	}
 
 	@Override
-	public void fill_apply_chk_no(int fill_bno, int bno) {
-		this.FillMapper.fill_apply_chk_no(fill_bno,bno);
+	@Transactional
+	public void cancelFillByRequester(String storeId, int fillBno, int memberBno, String loginId) {
+		requireStoreAndMember(storeId, memberBno);
+		FillPost fill = requireFill(storeId, fillBno);
+		if (!loginId.equals(fill.getId())) {
+			throw new IllegalArgumentException("Only requester can cancel.");
+		}
+		if (fill.getChk() != null && fill.getChk().intValue() == FILL_CHK_APPROVED) {
+			throw new IllegalArgumentException("Approved fill cannot be canceled.");
+		}
+		fillMapper.updateFillStatus(fillBno, FILL_CHK_CANCELED);
+		fillMapper.updateOtherPendingApplyStatus(fillBno, -1, APPLY_CHK_REJECTED);
+		fillMapper.updateFillApplyCount(fillBno);
 	}
 
-	@Override
-	public void fill_apply_ok(Fill fill) {
-		this.FillMapper.fill_apply_ok(fill);
+	private Store requireStore(String storeId) {
+		Store store = fillMapper.findStoreById(storeId);
+		if (store == null) {
+			throw new IllegalArgumentException("Store not found.");
+		}
+		return store;
 	}
 
-	@Override
-	public int fill_apply_no(int bno) {
-		return this.FillMapper.fill_apply_no(bno);
+	private void requireStoreAndMember(String storeId, int memberBno) {
+		requireStore(storeId);
+		requireApprovedMember(storeId, memberBno);
 	}
 
-	@Override
-	public void fill_apply_reset(Fill fill) {
-		this.FillMapper.fill_apply_reset(fill);
+	private StoreMember requireApprovedMember(String storeId, int memberBno) {
+		StoreMember storeMember = fillMapper.findApprovedStoreMember(storeId, memberBno);
+		if (storeMember == null) {
+			throw new IllegalArgumentException("No permission for this store.");
+		}
+		return storeMember;
 	}
 
-	@Override
-	public List<Resume> resume_list(String id) {
-		return this.FillMapper.resume_list(id);
+	private FillPost requireFill(String storeId, int fillBno) {
+		FillPost fill = fillMapper.findFillDetailByStore(storeId, fillBno);
+		if (fill == null) {
+			throw new IllegalArgumentException("Fill request not found.");
+		}
+		return fill;
 	}
 
-	@Override
-	public int resume_bno(int fill_bno, String id) {
-		return this.FillMapper.resume_bno(fill_bno,id);
+	private String normalizeRequiredText(String value, String message) {
+		if (isBlank(value)) {
+			throw new IllegalArgumentException(message);
+		}
+		return value.trim();
 	}
 
-	@Override
-	public int resume_count(int fill_bno, String id) {
-		return this.FillMapper.resume_count(fill_bno,id);
+	private LocalDate parseRequiredDate(String value, String message) {
+		if (isBlank(value)) {
+			throw new IllegalArgumentException(message);
+		}
+		try {
+			return LocalDate.parse(value.trim());
+		} catch (DateTimeParseException ex) {
+			throw new IllegalArgumentException(message);
+		}
 	}
 
-	@Override
-	public Resume apply_resume_content(int resume_bno) {
-		return this.FillMapper.apply_resume_content(resume_bno);
+	private String normalizeTimeString(String value) {
+		if (isBlank(value)) {
+			return "";
+		}
+		String trimmed = value.trim();
+		try {
+			String parsed = LocalTime.parse(trimmed).toString();
+			return parsed.length() >= 5 ? parsed.substring(0, 5) : parsed;
+		} catch (DateTimeParseException ex) {
+			return trimmed.length() >= 5 ? trimmed.substring(0, 5) : trimmed;
+		}
 	}
 
-
+	private boolean isBlank(String value) {
+		return value == null || value.trim().isEmpty();
+	}
 }

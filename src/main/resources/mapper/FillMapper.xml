@@ -1,129 +1,295 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="kr.co.storefamily.mapper.FillMapper">
 
-	<select id="my_fill_list" resultType="Fill">
-		select * from fill where code=#{code} and id=#{id}
+	<select id="findMemberBnoById" resultType="int">
+		select bno from member where id = #{id}
 	</select>
 
-	<select id="my_schedule" resultType="Schedule">
-		select * from schedule where code=#{code} and id=#{id} and 
-		date_format(concat(day," ",start_time),'%Y-%m-%d %H:%i') > date_format(now(),'%Y-%m-%d %H:%i')
+	<select id="findStoreById" resultType="Store">
+		select * from store where store_id = #{storeId} limit 1
 	</select>
-	
-	<select id="this_schedule" resultType="Schedule">
-		select * from schedule where bno = #{schedule_bno}
+
+	<select id="findApprovedStoreMember" resultType="StoreMember">
+		select *
+		from store_member
+		where store_id = #{storeId}
+		  and member_bno = #{memberBno}
+		  and chk = 1
+		limit 1
 	</select>
-	
-	<insert id="fill_write_ok" parameterType="Fill">
-		insert into fill(title,content,name,id,fill_day,fill_start_time,fill_end_time,fill_di_time,sign_day,schedule_bno,code,apply_start_day,apply_end_day)
-		values(#{title},#{content},#{name},#{id},#{fill_day},#{fill_start_time},#{fill_end_time},#{fill_di_time},now(),#{schedule_bno},#{code},#{apply_start_day},#{apply_end_day})
+
+	<select id="findFirstAccessibleStoreId" resultType="string">
+		select sm.store_id
+		from store_member sm
+		where sm.member_bno = #{memberBno}
+		  and sm.chk = 1
+		order by sm.store_member_id asc
+		limit 1
+	</select>
+
+	<select id="findScheduleForFillCreate" resultType="StoreSchedule">
+		select
+			sc.bno,
+			sc.store_employee_bno,
+			sc.work_date,
+			sc.start_time,
+			sc.end_time,
+			sc.work_minutes,
+			sc.status,
+			sc.memo,
+			sc.part_bno,
+			sc.created_at,
+			sc.updated_at,
+			sm.member_bno,
+			m.name as employee_name,
+			m.id as employee_id,
+			sp.part_name,
+			sp.color_code,
+			sp.sort_order
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		join member m on m.bno = sm.member_bno
+		left join schedule_part sp on sp.bno = sc.part_bno
+		where sm.store_id = #{storeId}
+		  and sc.bno = #{scheduleBno}
+		  and sm.member_bno = #{memberBno}
+		  and sm.chk = 1
+		limit 1
+	</select>
+
+	<select id="findFillDetailByStore" resultType="FillPost">
+		select
+			f.bno,
+			f.title,
+			f.content,
+			f.name,
+			f.id,
+			f.fill_day,
+			f.fill_start_time,
+			f.fill_end_time,
+			f.fill_di_time,
+			f.sign_day,
+			f.schedule_bno,
+			f.code,
+			f.apply_start_day,
+			f.apply_end_day,
+			f.chk,
+			f.apply_su,
+			s.store_id,
+			s.store_name,
+			s.store_code,
+			m_req.bno as requester_member_bno,
+			sc.store_employee_bno,
+			m_sc.name as schedule_member_name,
+			m_sc.id as schedule_member_id,
+			sp.part_name
+		from fill f
+		join store s on s.store_code = f.code
+		join schedule sc on sc.bno = f.schedule_bno
+		join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
+		join member m_sc on m_sc.bno = sm_sc.member_bno
+		left join member m_req on m_req.id = f.id
+		left join schedule_part sp on sp.bno = sc.part_bno
+		where s.store_id = #{storeId}
+		  and f.bno = #{fillBno}
+		limit 1
+	</select>
+
+	<select id="findFillListByStore" resultType="FillPost">
+		select
+			f.bno,
+			f.title,
+			f.content,
+			f.name,
+			f.id,
+			f.fill_day,
+			f.fill_start_time,
+			f.fill_end_time,
+			f.fill_di_time,
+			f.sign_day,
+			f.schedule_bno,
+			f.code,
+			f.apply_start_day,
+			f.apply_end_day,
+			f.chk,
+			f.apply_su,
+			s.store_id,
+			s.store_name,
+			s.store_code,
+			m_req.bno as requester_member_bno,
+			sc.store_employee_bno,
+			m_sc.name as schedule_member_name,
+			m_sc.id as schedule_member_id,
+			sp.part_name
+		from fill f
+		join store s on s.store_code = f.code
+		join schedule sc on sc.bno = f.schedule_bno
+		join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
+		join member m_sc on m_sc.bno = sm_sc.member_bno
+		left join member m_req on m_req.id = f.id
+		left join schedule_part sp on sp.bno = sc.part_bno
+		where s.store_id = #{storeId}
+		order by case when f.chk = 0 then 0 else 1 end asc,
+				 str_to_date(f.fill_day, '%Y-%m-%d') asc,
+				 f.sign_day desc,
+				 f.bno desc
+	</select>
+
+	<select id="findFillApplyList" resultType="FillApply">
+		select
+			fa.bno,
+			fa.w_name,
+			fa.m_name,
+			fa.id,
+			fa.code,
+			fa.schedule_bno,
+			fa.fill_bno,
+			fa.w_code,
+			fa.chk,
+			fa.resume_bno,
+			fa.resume_title,
+			m.bno as applicant_member_bno,
+			m.phone as applicant_phone,
+			m.email as applicant_email,
+			sm.position
+		from fill_apply fa
+		left join member m on m.id = fa.id
+		left join store s on s.store_code = fa.w_code
+		left join store_member sm on sm.store_id = s.store_id and sm.member_bno = m.bno and sm.chk = 1
+		where fa.fill_bno = #{fillBno}
+		order by case when fa.chk = 0 then 0 else 1 end asc, fa.bno asc
+	</select>
+
+	<insert id="insertFill" parameterType="FillPost" useGeneratedKeys="true" keyProperty="bno">
+		insert into fill (
+			title,
+			content,
+			name,
+			id,
+			fill_day,
+			fill_start_time,
+			fill_end_time,
+			fill_di_time,
+			sign_day,
+			schedule_bno,
+			code,
+			apply_start_day,
+			apply_end_day,
+			chk,
+			apply_su
+		) values (
+			#{title},
+			#{content},
+			#{name},
+			#{id},
+			#{fill_day},
+			#{fill_start_time},
+			#{fill_end_time},
+			#{fill_di_time},
+			curdate(),
+			#{schedule_bno},
+			#{code},
+			#{apply_start_day},
+			#{apply_end_day},
+			#{chk},
+			#{apply_su}
+		)
 	</insert>
-	
-	<select id="my_store_fill_list" resultType="Fill">
-		select * from fill where code = #{code}
-	</select>
-	
-	<select id="fill_apply_content" resultType="Fill">
-		select * from fill where bno=#{bno} order by bno desc
-	</select>
-	
-	<select id="fill_local_do" resultType="String">
-		select local_do from local_do where code = #{local_do}
-	</select>
-	
-	<select id="fill_local_si" resultType="String">
-		select local_si from local_si where code=#{local_si} and local_do_code = #{local_do}	
-	</select>
-	
-	<select id="fill_apply_count" resultType="int">
-		select count(*) from fill_apply where fill_bno = #{bno} and id=#{id}
-	</select>
-	
-	<select id="this_apply_list" resultType="Fill">
-		select * from fill_apply where fill_bno = #{bno}
-	</select>
-	
-	<select id="fill_all_list" resultType="Fill">
-		select * from fill where chk=1 order by bno desc
-	</select>
-	
-	<update id="fill_registrar_ok" parameterType="int">
-		update fill set chk=1 where bno=#{bno}
-	</update>
-	
-	<update id="fill_apply_add" parameterType="Fill">
-		update fill set bussiness=#{bussiness}, field=#{field}, local_do=#{local_do}, local_si=#{local_si}, pay=#{pay}"원" where bno=#{bno}
-	</update>
-	
-	<update id="fill_registrar_cancle" parameterType="int">
-		update fill set chk=0, bussiness=null, local_do=null, local_si=null, pay=null where bno=#{bno}
-	</update>
-	
-	<select id="resume_title" resultType="String">
-		select title from resume where bno=#{resume_bno}
-	</select>
-	
-	<insert id="fill_apply" parameterType="Fill">
-		insert into fill_apply(w_name,m_name,id,code,schedule_bno,fill_bno,w_code,resume_bno,resume_title)
-		values(#{w_name},#{m_name},#{id},#{code},#{schedule_bno},#{fill_bno},#{w_code},#{resume_bno},#{resume_title})
+
+	<insert id="insertFillApply" parameterType="FillApply" useGeneratedKeys="true" keyProperty="bno">
+		insert into fill_apply (
+			w_name,
+			m_name,
+			id,
+			code,
+			schedule_bno,
+			fill_bno,
+			w_code,
+			chk,
+			resume_bno,
+			resume_title
+		) values (
+			#{w_name},
+			#{m_name},
+			#{id},
+			#{code},
+			#{schedule_bno},
+			#{fill_bno},
+			#{w_code},
+			#{chk},
+			#{resume_bno},
+			#{resume_title}
+		)
 	</insert>
-	
-	<update id="fill_apply_su_up" parameterType="int">
-		update fill set apply_su = apply_su + 1 where bno = #{fill_bno}
-	</update>
-	
-	<delete id="fill_apply_cancle">
-		delete from fill_apply where fill_bno=#{bno} and id=#{id}
-	</delete>
-	
-	<update id="fill_apply_resume_change">
-		update fill_apply set resume_bno = #{resume_bno} where fill_bno=#{bno} and id=#{id}
-	</update>
-	
-	<update id="fill_apply_su_down" parameterType="int">
-		update fill set apply_su = apply_su - 1 where bno = #{fill_bno}
-	</update>
-	
-	<select id="apply_content" resultType="Fill">
-		select * from fill_apply where bno=#{bno}
+
+	<select id="countActiveApplyByFillAndId" resultType="int">
+		select count(*)
+		from fill_apply
+		where fill_bno = #{fillBno}
+		  and id = #{id}
+		  and chk in (0, 1, 2)
 	</select>
-	
-	<update id="fill_apply_chk_ok" parameterType="int">
-		update fill_apply set chk = 1 where bno=#{bno}
-	</update>
-	
-	<update id="fill_apply_chk_no" parameterType="int">
-		update fill_apply set chk = 2 where (select count(chk) from fill_apply where chk = 1) >= 1
-		and fill_bno = #{fill_bno} and bno != #{bno}
-	</update>
-	
-	<update id="fill_apply_ok" parameterType="Fill">
-		update schedule set apply_name = #{m_name}, apply_id=#{id}, apply_code=#{code} where bno = #{schedule_bno}
-	</update>
-	
-	<update id="fill_apply_no" parameterType="int">
-		update fill_apply set chk = 2 where bno=#{bno}
-	</update>
-	
-	<update id="fill_apply_reset" parameterType="Fill">
-		update schedule set apply_name = null , apply_id=null, apply_code=null where bno=#{schedule_bno}
-	</update>
-	
-	<select id="resume_list" resultType="Resume">
-		select * from resume where id=#{id}
+
+	<select id="findMyApplyByFillAndId" resultType="FillApply">
+		select *
+		from fill_apply
+		where fill_bno = #{fillBno}
+		  and id = #{id}
+		  and chk = 0
+		order by bno desc
+		limit 1
 	</select>
-	
-	<select id="resume_bno" resultType="int">
-		select resume_bno from fill_apply where fill_bno=#{fill_bno} and id=#{id}
+
+	<select id="findFillApplyByStore" resultType="FillApply">
+		select fa.*
+		from fill_apply fa
+		join fill f on f.bno = fa.fill_bno
+		join store s on s.store_code = f.code
+		where s.store_id = #{storeId}
+		  and fa.fill_bno = #{fillBno}
+		  and fa.bno = #{applyBno}
+		limit 1
 	</select>
-	
-	<select id="resume_count" resultType="int">
-		select count(*) from fill_apply where fill_bno=#{fill_bno} and id=#{id}
-	</select>
-	
-	<select id="apply_resume_content" resultType="Resume">
-		select * from resume where bno = #{resume_bno}
-	</select>
+
+	<update id="updateFillApplyCount">
+		update fill f
+		set f.apply_su = (
+			select count(*)
+			from fill_apply fa
+			where fa.fill_bno = f.bno
+			  and fa.chk in (0, 1, 2)
+		)
+		where f.bno = #{fillBno}
+	</update>
+
+	<update id="updateFillStatus">
+		update fill
+		set chk = #{chk}
+		where bno = #{fillBno}
+	</update>
+
+	<update id="updateFillApplyStatus">
+		update fill_apply
+		set chk = #{chk}
+		where bno = #{applyBno}
+	</update>
+
+	<update id="updateOtherPendingApplyStatus">
+		update fill_apply
+		set chk = #{chk}
+		where fill_bno = #{fillBno}
+		  and bno != #{winnerApplyBno}
+		  and chk = 0
+	</update>
+
+	<update id="cancelMyApply">
+		update fill_apply
+		set chk = 3
+		where fill_bno = #{fillBno}
+		  and id = #{id}
+		  and chk = 0
+	</update>
+
 </mapper>
