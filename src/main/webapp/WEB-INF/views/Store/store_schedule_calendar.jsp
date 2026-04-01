@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>½ºÄÉÁÙ Ä¶¸°´õ</title>
+<title>ìŠ¤ì¼€ì¤„ ìº˜ë¦°ë”</title>
 <style>
 	:root {
 		--bg: #f6f7fb;
@@ -76,14 +76,14 @@
 <div class="wrap">
 	<div class="top">
 		<div>
-			<h1 class="title">½ºÄÉÁÙ Ä¶¸°´õ</h1>
+			<h1 class="title">ìŠ¤ì¼€ì¤„ ìº˜ë¦°ë”</h1>
 			<p class="sub"><strong><c:out value="${myStore.store_name}"/></strong> (<c:out value="${myStore.store_code}"/>)</p>
 		</div>
 		<div class="nav-btns">
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">¸ÅÀå °ü¸®</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/employees">Á÷¿ø ¸®½ºÆ®</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">ë§¤ìž¥ ê´€ë¦¬</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/employees">ì§ì› ë¦¬ìŠ¤íŠ¸</a>
 			<c:if test="${not readOnly}">
-				<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/parts">±Ù¹« ÆÄÆ® °ü¸®</a>
+				<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/parts">ê·¼ë¬´ íŒŒíŠ¸ ê´€ë¦¬</a>
 			</c:if>
 		</div>
 	</div>
@@ -98,12 +98,12 @@
 				<div class="calendar-head">
 					<h2 class="month-label">${month}</h2>
 					<div class="nav-btns">
-						<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${prevMonth}&date=${prevMonth}-01">ÀÌÀü ´Þ</a>
-						<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${nextMonth}&date=${nextMonth}-01">´ÙÀ½ ´Þ</a>
+						<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${prevMonth}&date=${prevMonth}-01">ì´ì „ ë‹¬</a>
+						<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${nextMonth}&date=${nextMonth}-01">ë‹¤ìŒ ë‹¬</a>
 					</div>
 				</div>
 				<div class="week">
-					<div>ÀÏ</div><div>¿ù</div><div>È­</div><div>¼ö</div><div>¸ñ</div><div>±Ý</div><div>Åä</div>
+					<div>ì¼</div><div>ì›”</div><div>í™”</div><div>ìˆ˜</div><div>ëª©</div><div>ê¸ˆ</div><div>í† </div>
 				</div>
 				<div class="calendar-grid">
 					<c:forEach var="cell" items="${calendarCells}">
@@ -128,48 +128,48 @@
 
 			<c:if test="${not readOnly}">
 			<div class="card form-card">
-				<h3 class="form-title">½ºÄÉÁÙ µî·Ï</h3>
+				<h3 class="form-title">ìŠ¤ì¼€ì¤„ ë“±ë¡</h3>
 				<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">
 					<input type="hidden" name="month" value="${month}">
 					<input type="hidden" name="selectedDate" value="${selectedDate}">
 					<div class="form-grid">
 						<div class="form-group">
-							<label>Á÷¿ø</label>
+							<label>ì§ì›</label>
 							<select name="storeEmployeeBno" required>
-								<option value="">Á÷¿ø ¼±ÅÃ</option>
+								<option value="">ì§ì› ì„ íƒ</option>
 								<c:forEach var="emp" items="${employees}">
 									<option value="${emp.store_member_id}">${emp.name} (${emp.member_id})</option>
 								</c:forEach>
 							</select>
 						</div>
 						<div class="form-group">
-							<label>±Ù¹«ÀÏ</label>
+							<label>ê·¼ë¬´ì¼</label>
 							<input type="date" name="workDate" value="${selectedDate}" required>
 						</div>
 						<div class="form-group">
-							<label>±Ù¹« ÆÄÆ®</label>
+							<label>ê·¼ë¬´ íŒŒíŠ¸</label>
 							<select name="partBno" onchange="applyPart(this)">
-								<option value="">Á÷Á¢ ÀÔ·Â</option>
+								<option value="">ì§ì ‘ ìž…ë ¥</option>
 								<c:forEach var="part" items="${parts}">
 									<option value="${part.bno}" data-start="${fn:substring(part.start_time,0,5)}" data-end="${fn:substring(part.end_time,0,5)}">${part.part_name}</option>
 								</c:forEach>
 							</select>
 						</div>
 						<div class="form-group">
-							<label>½ÃÀÛ ½Ã°£</label>
+							<label>ì‹œìž‘ ì‹œê°„</label>
 							<input type="time" name="startTime" required>
 						</div>
 						<div class="form-group">
-							<label>Á¾·á ½Ã°£</label>
+							<label>ì¢…ë£Œ ì‹œê°„</label>
 							<input type="time" name="endTime" required>
 						</div>
 						<div class="form-group full">
-							<label>¸Þ¸ð</label>
-							<textarea name="memo" maxlength="255" placeholder="¸Þ¸ð¸¦ ÀÔ·ÂÇÏ¼¼¿ä (¼±ÅÃ)"></textarea>
+							<label>ë©”ëª¨</label>
+							<textarea name="memo" maxlength="255" placeholder="ë©”ëª¨ë¥¼ ìž…ë ¥í•˜ì„¸ìš” (ì„ íƒ)"></textarea>
 						</div>
 					</div>
 					<div class="form-actions">
-						<button class="btn" type="submit">µî·Ï</button>
+						<button class="btn" type="submit">ë“±ë¡</button>
 					</div>
 				</form>
 			</div>
@@ -178,10 +178,10 @@
 
 		<div>
 			<div class="card panel">
-				<h3 class="panel-title">${selectedDate} ½ºÄÉÁÙ</h3>
+				<h3 class="panel-title">${selectedDate} ìŠ¤ì¼€ì¤„</h3>
 				<c:choose>
 					<c:when test="${empty daySchedules}">
-						<div class="item-sub">¼±ÅÃÇÑ ³¯Â¥ÀÇ ½ºÄÉÁÙÀÌ ¾ø½À´Ï´Ù.</div>
+						<div class="item-sub">ì„ íƒí•œ ë‚ ì§œì˜ ìŠ¤ì¼€ì¤„ì´ ì—†ìŠµë‹ˆë‹¤.</div>
 					</c:when>
 					<c:otherwise>
 						<ul class="list">
@@ -193,22 +193,22 @@
 											<div><c:out value="${sc.part_name}"/></div>
 										</c:if>
 									</div>
-									<div class="item-sub">${fn:substring(sc.start_time,0,5)} ~ ${fn:substring(sc.end_time,0,5)} / ${sc.work_minutes}ºÐ</div>
+									<div class="item-sub">${fn:substring(sc.start_time,0,5)} ~ ${fn:substring(sc.end_time,0,5)} / ${sc.work_minutes}ë¶„</div>
 									<c:if test="${not empty sc.memo}">
 										<div class="item-sub"><c:out value="${sc.memo}"/></div>
 									</c:if>
 									<c:if test="${sessionScope.id == sc.employee_id}">
 									<div class="item-actions">
-										<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/${sc.bno}/fill/new">´ëÅ¸ ¿äÃ»</a>
+										<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/${sc.bno}/fill/new">ëŒ€íƒ€ ìš”ì²­</a>
 									</div>
 									</c:if>
 									<c:if test="${not readOnly}">
 									<div class="item-actions">
-										<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${month}&date=${selectedDate}&editScheduleId=${sc.bno}">¼öÁ¤</a>
+										<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${month}&date=${selectedDate}&editScheduleId=${sc.bno}">ìˆ˜ì •</a>
 										<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules/${sc.bno}/delete" style="margin:0;">
 											<input type="hidden" name="month" value="${month}">
 											<input type="hidden" name="selectedDate" value="${selectedDate}">
-											<button class="btn btn-danger" type="submit" onclick="return confirm('ÇØ´ç ½ºÄÉÁÙÀ» »èÁ¦ÇÒ±î¿ä?');">»èÁ¦</button>
+											<button class="btn btn-danger" type="submit" onclick="return confirm('í•´ë‹¹ ìŠ¤ì¼€ì¤„ì„ ì‚­ì œí• ê¹Œìš”?');">ì‚­ì œ</button>
 										</form>
 									</div>
 									</c:if>
@@ -221,13 +221,13 @@
 
 			<c:if test="${not readOnly and not empty editSchedule}">
 				<div class="card form-card">
-					<h3 class="form-title">½ºÄÉÁÙ ¼öÁ¤</h3>
+					<h3 class="form-title">ìŠ¤ì¼€ì¤„ ìˆ˜ì •</h3>
 					<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules/${editSchedule.bno}">
 						<input type="hidden" name="month" value="${month}">
 						<input type="hidden" name="selectedDate" value="${selectedDate}">
 						<div class="form-grid">
 							<div class="form-group">
-								<label>Á÷¿ø</label>
+								<label>ì§ì›</label>
 								<select name="storeEmployeeBno" required>
 									<c:forEach var="emp" items="${employees}">
 										<option value="${emp.store_member_id}" ${emp.store_member_id == editSchedule.store_employee_bno ? 'selected' : ''}>${emp.name} (${emp.member_id})</option>
@@ -235,34 +235,34 @@
 								</select>
 							</div>
 							<div class="form-group">
-								<label>±Ù¹«ÀÏ</label>
+								<label>ê·¼ë¬´ì¼</label>
 								<input type="date" name="workDate" value="${editSchedule.work_date}" required>
 							</div>
 							<div class="form-group">
-								<label>±Ù¹« ÆÄÆ®</label>
+								<label>ê·¼ë¬´ íŒŒíŠ¸</label>
 								<select name="partBno" onchange="applyPart(this)">
-									<option value="">Á÷Á¢ ÀÔ·Â</option>
+									<option value="">ì§ì ‘ ìž…ë ¥</option>
 									<c:forEach var="part" items="${parts}">
 										<option value="${part.bno}" data-start="${fn:substring(part.start_time,0,5)}" data-end="${fn:substring(part.end_time,0,5)}" ${part.bno == editSchedule.part_bno ? 'selected' : ''}>${part.part_name}</option>
 									</c:forEach>
 								</select>
 							</div>
 							<div class="form-group">
-								<label>½ÃÀÛ ½Ã°£</label>
+								<label>ì‹œìž‘ ì‹œê°„</label>
 								<input type="time" name="startTime" value="${fn:substring(editSchedule.start_time,0,5)}" required>
 							</div>
 							<div class="form-group">
-								<label>Á¾·á ½Ã°£</label>
+								<label>ì¢…ë£Œ ì‹œê°„</label>
 								<input type="time" name="endTime" value="${fn:substring(editSchedule.end_time,0,5)}" required>
 							</div>
 							<div class="form-group full">
-								<label>¸Þ¸ð</label>
+								<label>ë©”ëª¨</label>
 								<textarea name="memo" maxlength="255"><c:out value="${editSchedule.memo}"/></textarea>
 							</div>
 						</div>
 						<div class="form-actions">
-							<button class="btn" type="submit">¼öÁ¤ ÀúÀå</button>
-							<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${month}&date=${selectedDate}">¼öÁ¤ Ãë¼Ò</a>
+							<button class="btn" type="submit">ìˆ˜ì • ì €ìž¥</button>
+							<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules?month=${month}&date=${selectedDate}">ìˆ˜ì • ì·¨ì†Œ</a>
 						</div>
 					</form>
 				</div>

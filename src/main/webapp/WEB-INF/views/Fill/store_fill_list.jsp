@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>´ëÅ¸ ¿äÃ» ¸ñ·Ï</title>
+<title>ëŒ€íƒ€ ìš”ì²­ ëª©ë¡</title>
 <style>
 	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; }
 	body { margin:0; background:var(--bg); color:var(--text); font-family:"GmarketSansTTFMedium","Malgun Gothic",sans-serif; }
@@ -35,12 +35,12 @@
 <div class="wrap">
 	<div class="top">
 		<div>
-			<h1 class="title">´ëÅ¸ ¿äÃ» ¸ñ·Ï</h1>
+			<h1 class="title">ëŒ€íƒ€ ìš”ì²­ ëª©ë¡</h1>
 			<p class="sub"><strong><c:out value="${myStore.store_name}"/></strong> (<c:out value="${myStore.store_code}"/>)</p>
 		</div>
 		<div>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">¸ÅÀå °ü¸®</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">½ºÄÉÁÙ Ä¶¸°´õ</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">ë§¤ìž¥ ê´€ë¦¬</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">ìŠ¤ì¼€ì¤„ ìº˜ë¦°ë”</a>
 		</div>
 	</div>
 
@@ -48,7 +48,7 @@
 
 	<c:choose>
 		<c:when test="${empty fills}">
-			<div class="empty">µî·ÏµÈ ´ëÅ¸ ¿äÃ»ÀÌ ¾ø½À´Ï´Ù. ½ºÄÉÁÙ »ó¼¼¿¡¼­ ´ëÅ¸ ¿äÃ»À» »ý¼ºÇØ ÁÖ¼¼¿ä.</div>
+			<div class="empty">ë“±ë¡ëœ ëŒ€íƒ€ ìš”ì²­ì´ ì—†ìŠµë‹ˆë‹¤. ìŠ¤ì¼€ì¤„ ìƒì„¸ì—ì„œ ëŒ€íƒ€ ìš”ì²­ì„ ìƒì„±í•´ ì£¼ì„¸ìš”.</div>
 		</c:when>
 		<c:otherwise>
 			<div class="list">
@@ -57,18 +57,18 @@
 						<div class="row">
 							<div class="name"><c:out value="${fill.title}"/></div>
 							<c:choose>
-								<c:when test="${fill.chk == 0}"><span class="badge s0">¸ðÁýÁß</span></c:when>
-								<c:when test="${fill.chk == 1}"><span class="badge s1">½ÂÀÎ¿Ï·á</span></c:when>
-								<c:when test="${fill.chk == 2}"><span class="badge s2">¸¶°¨</span></c:when>
-								<c:otherwise><span class="badge s3">Ãë¼Ò</span></c:otherwise>
+								<c:when test="${fill.chk == 0}"><span class="badge s0">ëª¨ì§‘ì¤‘</span></c:when>
+								<c:when test="${fill.chk == 1}"><span class="badge s1">ìŠ¹ì¸ì™„ë£Œ</span></c:when>
+								<c:when test="${fill.chk == 2}"><span class="badge s2">ë§ˆê°</span></c:when>
+								<c:otherwise><span class="badge s3">ì·¨ì†Œ</span></c:otherwise>
 							</c:choose>
 						</div>
 						<div class="meta">
-							<span>¿äÃ»ÀÚ: <c:out value="${fill.name}"/></span>
-							<span>±Ù¹«ÀÏ: <c:out value="${fill.fill_day}"/></span>
-							<span>±Ù¹«½Ã°£: <c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/></span>
-							<span>¸ðÁý±â°£: <c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></span>
-							<span>Áö¿øÀÚ¼ö: <c:out value="${fill.apply_su}"/>¸í</span>
+							<span>ìš”ì²­ìž: <c:out value="${fill.name}"/></span>
+							<span>ê·¼ë¬´ì¼: <c:out value="${fill.fill_day}"/></span>
+							<span>ê·¼ë¬´ì‹œê°„: <c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/></span>
+							<span>ëª¨ì§‘ê¸°ê°„: <c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></span>
+							<span>ì§€ì›ìžìˆ˜: <c:out value="${fill.apply_su}"/>ëª…</span>
 						</div>
 					</a>
 				</c:forEach>

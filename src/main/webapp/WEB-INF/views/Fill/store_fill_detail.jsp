@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>´ëÅ¸ ¿äÃ» »ó¼¼</title>
+<title>ëŒ€íƒ€ ìš”ì²­ ìƒì„¸</title>
 <style>
 	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; --danger:#be123c; }
 	body { margin:0; background:var(--bg); color:var(--text); font-family:"GmarketSansTTFMedium","Malgun Gothic",sans-serif; }
@@ -41,12 +41,12 @@
 <div class="wrap">
 	<div class="top">
 		<div>
-			<h1 class="title">´ëÅ¸ ¿äÃ» »ó¼¼</h1>
-			<div class="sub"><strong><c:out value="${myStore.store_name}"/></strong> / ¿äÃ»ÀÚ <c:out value="${fill.name}"/></div>
+			<h1 class="title">ëŒ€íƒ€ ìš”ì²­ ìƒì„¸</h1>
+			<div class="sub"><strong><c:out value="${myStore.store_name}"/></strong> / ìš”ì²­ìž <c:out value="${fill.name}"/></div>
 		</div>
 		<div>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">¸ñ·ÏÀ¸·Î</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">Ä¶¸°´õ·Î</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">ëª©ë¡ìœ¼ë¡œ</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">ìº˜ë¦°ë”ë¡œ</a>
 		</div>
 	</div>
 
@@ -56,19 +56,19 @@
 		<div class="top" style="margin-bottom:8px;">
 			<h2 style="margin:0;"><c:out value="${fill.title}"/></h2>
 			<c:choose>
-				<c:when test="${fill.chk == 0}"><span class="badge s0">¸ðÁýÁß</span></c:when>
-				<c:when test="${fill.chk == 1}"><span class="badge s1">½ÂÀÎ¿Ï·á</span></c:when>
-				<c:when test="${fill.chk == 2}"><span class="badge s2">¸¶°¨</span></c:when>
-				<c:otherwise><span class="badge s3">Ãë¼Ò</span></c:otherwise>
+				<c:when test="${fill.chk == 0}"><span class="badge s0">ëª¨ì§‘ì¤‘</span></c:when>
+				<c:when test="${fill.chk == 1}"><span class="badge s1">ìŠ¹ì¸ì™„ë£Œ</span></c:when>
+				<c:when test="${fill.chk == 2}"><span class="badge s2">ë§ˆê°</span></c:when>
+				<c:otherwise><span class="badge s3">ì·¨ì†Œ</span></c:otherwise>
 			</c:choose>
 		</div>
 		<div class="grid">
-			<div class="row"><div class="label">±Ù¹«ÀÏ</div><div class="value"><c:out value="${fill.fill_day}"/></div></div>
-			<div class="row"><div class="label">±Ù¹«½Ã°£</div><div class="value"><c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/> <c:if test="${not empty fill.fill_di_time}">(<c:out value="${fill.fill_di_time}"/>)</c:if></div></div>
-			<div class="row"><div class="label">¸ðÁý±â°£</div><div class="value"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></div></div>
-			<div class="row"><div class="label">Áö¿øÀÚ¼ö</div><div class="value"><c:out value="${fill.apply_su}"/>¸í</div></div>
-			<div class="row"><div class="label">¿äÃ»ÀÚ</div><div class="value"><c:out value="${fill.name}"/> (<c:out value="${fill.id}"/>)</div></div>
-			<div class="row"><div class="label">¿øº»½ºÄÉÁÙ</div><div class="value">#<c:out value="${fill.schedule_bno}"/> / <c:out value="${fill.schedule_member_name}"/> (<c:out value="${fill.schedule_member_id}"/>)</div></div>
+			<div class="row"><div class="label">ê·¼ë¬´ì¼</div><div class="value"><c:out value="${fill.fill_day}"/></div></div>
+			<div class="row"><div class="label">ê·¼ë¬´ì‹œê°„</div><div class="value"><c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/> <c:if test="${not empty fill.fill_di_time}">(<c:out value="${fill.fill_di_time}"/>)</c:if></div></div>
+			<div class="row"><div class="label">ëª¨ì§‘ê¸°ê°„</div><div class="value"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></div></div>
+			<div class="row"><div class="label">ì§€ì›ìžìˆ˜</div><div class="value"><c:out value="${fill.apply_su}"/>ëª…</div></div>
+			<div class="row"><div class="label">ìš”ì²­ìž</div><div class="value"><c:out value="${fill.name}"/> (<c:out value="${fill.id}"/>)</div></div>
+			<div class="row"><div class="label">ì›ë³¸ìŠ¤ì¼€ì¤„</div><div class="value">#<c:out value="${fill.schedule_bno}"/> / <c:out value="${fill.schedule_member_name}"/> (<c:out value="${fill.schedule_member_id}"/>)</div></div>
 		</div>
 		<div class="card" style="margin:10px 0 0; padding:10px;">
 			<div class="content"><c:out value="${fill.content}"/></div>
@@ -77,22 +77,22 @@
 		<div class="actions">
 			<c:if test="${canApply}">
 				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply">
-					<button class="btn" type="submit">Áö¿øÇÏ±â</button>
+					<button class="btn" type="submit">ì§€ì›í•˜ê¸°</button>
 				</form>
 			</c:if>
 			<c:if test="${hasPendingMyApply}">
 				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply/cancel">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('Áö¿øÀ» Ãë¼ÒÇÒ±î¿ä?');">Áö¿ø Ãë¼Ò</button>
+					<button class="btn btn-danger" type="submit" onclick="return confirm('ì§€ì›ì„ ì·¨ì†Œí• ê¹Œìš”?');">ì§€ì› ì·¨ì†Œ</button>
 				</form>
 			</c:if>
 			<c:if test="${canManage and fill.chk == 0}">
 				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/close">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('´ëÅ¸ ¿äÃ»À» ¸¶°¨ÇÒ±î¿ä?');">¿äÃ» ¸¶°¨</button>
+					<button class="btn btn-danger" type="submit" onclick="return confirm('ëŒ€íƒ€ ìš”ì²­ì„ ë§ˆê°í• ê¹Œìš”?');">ìš”ì²­ ë§ˆê°</button>
 				</form>
 			</c:if>
 			<c:if test="${canCancelFill}">
 				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/cancel">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('¿äÃ»À» Ãë¼ÒÇÒ±î¿ä?');">¿äÃ» Ãë¼Ò</button>
+					<button class="btn btn-danger" type="submit" onclick="return confirm('ìš”ì²­ì„ ì·¨ì†Œí• ê¹Œìš”?');">ìš”ì²­ ì·¨ì†Œ</button>
 				</form>
 			</c:if>
 		</div>
@@ -100,19 +100,19 @@
 
 	<c:if test="${showApplyList}">
 		<div class="card">
-			<h3 style="margin-top:0;">Áö¿øÀÚ ¸ñ·Ï</h3>
+			<h3 style="margin-top:0;">ì§€ì›ìž ëª©ë¡</h3>
 			<c:choose>
 				<c:when test="${empty applies}">
-					<div style="color:var(--muted);">¾ÆÁ÷ Áö¿øÀÚ°¡ ¾ø½À´Ï´Ù.</div>
+					<div style="color:var(--muted);">ì•„ì§ ì§€ì›ìžê°€ ì—†ìŠµë‹ˆë‹¤.</div>
 				</c:when>
 				<c:otherwise>
 					<table class="table">
 						<thead>
 							<tr>
-								<th>Áö¿øÀÚ</th>
-								<th>¿¬¶ôÃ³</th>
-								<th>»óÅÂ</th>
-								<c:if test="${canManage and fill.chk == 0}"><th>Ã³¸®</th></c:if>
+								<th>ì§€ì›ìž</th>
+								<th>ì—°ë½ì²˜</th>
+								<th>ìƒíƒœ</th>
+								<c:if test="${canManage and fill.chk == 0}"><th>ì²˜ë¦¬</th></c:if>
 							</tr>
 						</thead>
 						<tbody>
@@ -122,20 +122,20 @@
 								<td><c:out value="${ap.applicant_phone}"/></td>
 								<td>
 									<c:choose>
-										<c:when test="${ap.chk == 0}"><span class="badge s0">Áö¿ø´ë±â</span></c:when>
-										<c:when test="${ap.chk == 1}"><span class="badge s1">½ÂÀÎ</span></c:when>
-										<c:when test="${ap.chk == 2}"><span class="badge s2">°ÅÀý</span></c:when>
-										<c:otherwise><span class="badge s3">Áö¿øÃë¼Ò</span></c:otherwise>
+										<c:when test="${ap.chk == 0}"><span class="badge s0">ì§€ì›ëŒ€ê¸°</span></c:when>
+										<c:when test="${ap.chk == 1}"><span class="badge s1">ìŠ¹ì¸</span></c:when>
+										<c:when test="${ap.chk == 2}"><span class="badge s2">ê±°ì ˆ</span></c:when>
+										<c:otherwise><span class="badge s3">ì§€ì›ì·¨ì†Œ</span></c:otherwise>
 									</c:choose>
 								</td>
 								<c:if test="${canManage and fill.chk == 0}">
 								<td>
 									<c:if test="${ap.chk == 0}">
 										<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/approve">
-											<button class="btn" type="submit">½ÂÀÎ</button>
+											<button class="btn" type="submit">ìŠ¹ì¸</button>
 										</form>
 										<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/reject">
-											<button class="btn btn-danger" type="submit">°ÅÀý</button>
+											<button class="btn btn-danger" type="submit">ê±°ì ˆ</button>
 										</form>
 									</c:if>
 								</td>

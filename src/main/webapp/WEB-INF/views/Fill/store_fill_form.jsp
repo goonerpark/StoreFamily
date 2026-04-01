@@ -5,7 +5,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>´ëÅ¸ ¿äÃ» ÀÛ¼º</title>
+<title>ëŒ€íƒ€ ìš”ì²­ ì‘ì„±</title>
 <style>
 	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; }
 	body { margin:0; background:var(--bg); color:var(--text); font-family:"GmarketSansTTFMedium","Malgun Gothic",sans-serif; }
@@ -29,10 +29,10 @@
 <body>
 <div class="wrap">
 	<div class="top">
-		<h1 class="title">´ëÅ¸ ¿äÃ» ÀÛ¼º</h1>
+		<h1 class="title">ëŒ€íƒ€ ìš”ì²­ ì‘ì„±</h1>
 		<div>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/my-schedules">³» ½ºÄÉÁÙ·Î</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">´ëÅ¸ ¸ñ·Ï</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/my-schedules">ë‚´ ìŠ¤ì¼€ì¤„ë¡œ</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">ëŒ€íƒ€ ëª©ë¡</a>
 		</div>
 	</div>
 
@@ -40,33 +40,33 @@
 
 	<div class="card">
 		<div class="meta">
-			<div><strong>¿øº» ½ºÄÉÁÙ</strong></div>
-			<div>±Ù¹«ÀÏ: <c:out value="${schedule.work_date}"/></div>
-			<div>±Ù¹«½Ã°£: <c:out value="${fn:substring(schedule.start_time,0,5)}"/> ~ <c:out value="${fn:substring(schedule.end_time,0,5)}"/> <c:if test="${not empty schedule.part_name}">(<c:out value="${schedule.part_name}"/>)</c:if></div>
+			<div><strong>ì›ë³¸ ìŠ¤ì¼€ì¤„</strong></div>
+			<div>ê·¼ë¬´ì¼: <c:out value="${schedule.work_date}"/></div>
+			<div>ê·¼ë¬´ì‹œê°„: <c:out value="${fn:substring(schedule.start_time,0,5)}"/> ~ <c:out value="${fn:substring(schedule.end_time,0,5)}"/> <c:if test="${not empty schedule.part_name}">(<c:out value="${schedule.part_name}"/>)</c:if></div>
 		</div>
 
 		<form method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedule/${schedule.bno}/fill/new">
 			<div class="grid">
 				<div class="group full">
-					<label>Á¦¸ñ</label>
+					<label>ì œëª©</label>
 					<input type="text" name="title" maxlength="120" required>
 				</div>
 				<div class="group full">
-					<label>³»¿ë</label>
+					<label>ë‚´ìš©</label>
 					<textarea name="content" maxlength="1000" required></textarea>
 				</div>
 				<div class="group">
-					<label>¸ğÁı ½ÃÀÛÀÏ</label>
+					<label>ëª¨ì§‘ ì‹œì‘ì¼</label>
 					<input type="date" name="applyStartDay" value="${defaultApplyStart}" required>
 				</div>
 				<div class="group">
-					<label>¸ğÁı Á¾·áÀÏ</label>
+					<label>ëª¨ì§‘ ì¢…ë£Œì¼</label>
 					<input type="date" name="applyEndDay" value="${defaultApplyEnd}" required>
 				</div>
 			</div>
 			<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-				<button class="btn" type="submit">¿äÃ» µî·Ï</button>
-				<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/my-schedules">Ãë¼Ò</a>
+				<button class="btn" type="submit">ìš”ì²­ ë“±ë¡</button>
+				<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/my-schedules">ì·¨ì†Œ</a>
 			</div>
 		</form>
 	</div>
