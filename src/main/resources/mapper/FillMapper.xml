@@ -1,14 +1,19 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="kr.co.storefamily.mapper.FillMapper">
 
 	<select id="findMemberBnoById" resultType="int">
-		select bno from member where id = #{id}
+		select bno
+		from member
+		where id = #{id}
 	</select>
 
 	<select id="findStoreById" resultType="Store">
-		select * from store where store_id = #{storeId} limit 1
+		select *
+		from store
+		where store_id = #{storeId}
+		limit 1
 	</select>
 
 	<select id="findApprovedStoreMember" resultType="StoreMember">
@@ -17,6 +22,25 @@
 		where store_id = #{storeId}
 		  and member_bno = #{memberBno}
 		  and chk = 1
+		limit 1
+	</select>
+
+	<select id="findApprovedStoreMemberByLoginId" resultType="StoreMember">
+		select sm.*
+		from store_member sm
+		join member m on m.bno = sm.member_bno
+		where sm.store_id = #{storeId}
+		  and m.id = #{loginId}
+		  and sm.chk = 1
+		limit 1
+	</select>
+
+	<select id="findStoreMemberAny" resultType="StoreMember">
+		select *
+		from store_member
+		where store_id = #{storeId}
+		  and member_bno = #{memberBno}
+		order by store_member_id desc
 		limit 1
 	</select>
 
@@ -34,8 +58,8 @@
 			sc.bno,
 			sc.store_employee_bno,
 			sc.work_date,
-			sc.start_time,
-			sc.end_time,
+			time_format(sc.start_time, '%H:%i') as start_time,
+			time_format(sc.end_time, '%H:%i') as end_time,
 			sc.work_minutes,
 			sc.status,
 			sc.memo,
@@ -56,6 +80,71 @@
 		  and sc.bno = #{scheduleBno}
 		  and sm.member_bno = #{memberBno}
 		  and sm.chk = 1
+		limit 1
+	</select>
+
+	<select id="findScheduleByStoreAndId" resultType="StoreSchedule">
+		select
+			sc.bno,
+			sc.store_employee_bno,
+			sc.work_date,
+			time_format(sc.start_time, '%H:%i') as start_time,
+			time_format(sc.end_time, '%H:%i') as end_time,
+			sc.work_minutes,
+			sc.status,
+			sc.memo,
+			sc.part_bno,
+			sc.created_at,
+			sc.updated_at,
+			sm.member_bno,
+			m.name as employee_name,
+			m.id as employee_id,
+			sp.part_name,
+			sp.color_code,
+			sp.sort_order
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		join member m on m.bno = sm.member_bno
+		left join schedule_part sp on sp.bno = sc.part_bno
+		where sm.store_id = #{storeId}
+		  and sc.bno = #{scheduleBno}
+		limit 1
+	</select>
+
+	<select id="findSchedulePartsByStoreId" resultType="SchedulePart">
+		select
+			sp.bno,
+			sp.store_bno,
+			sp.part_name,
+			time_format(sp.start_time, '%H:%i') as start_time,
+			time_format(sp.end_time, '%H:%i') as end_time,
+			sp.color_code,
+			sp.sort_order,
+			sp.created_at,
+			sp.updated_at
+		from schedule_part sp
+		join store_member owner on owner.store_member_id = sp.store_bno
+		where owner.store_id = #{storeId}
+		  and owner.position = '사장'
+		order by case when sp.sort_order is null then 9999 else sp.sort_order end asc, sp.start_time asc, sp.bno asc
+	</select>
+
+	<select id="findSchedulePartByStoreAndId" resultType="SchedulePart">
+		select
+			sp.bno,
+			sp.store_bno,
+			sp.part_name,
+			time_format(sp.start_time, '%H:%i') as start_time,
+			time_format(sp.end_time, '%H:%i') as end_time,
+			sp.color_code,
+			sp.sort_order,
+			sp.created_at,
+			sp.updated_at
+		from schedule_part sp
+		join store_member owner on owner.store_member_id = sp.store_bno
+		where owner.store_id = #{storeId}
+		  and owner.position = '사장'
+		  and sp.bno = #{partBno}
 		limit 1
 	</select>
 
@@ -87,10 +176,10 @@
 			sp.part_name
 		from fill f
 		join store s on s.store_code = f.code
-		join schedule sc on sc.bno = f.schedule_bno
-		join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
-		join member m_sc on m_sc.bno = sm_sc.member_bno
 		left join member m_req on m_req.id = f.id
+		left join schedule sc on sc.bno = f.schedule_bno
+		left join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
+		left join member m_sc on m_sc.bno = sm_sc.member_bno
 		left join schedule_part sp on sp.bno = sc.part_bno
 		where s.store_id = #{storeId}
 		  and f.bno = #{fillBno}
@@ -125,10 +214,10 @@
 			sp.part_name
 		from fill f
 		join store s on s.store_code = f.code
-		join schedule sc on sc.bno = f.schedule_bno
-		join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
-		join member m_sc on m_sc.bno = sm_sc.member_bno
 		left join member m_req on m_req.id = f.id
+		left join schedule sc on sc.bno = f.schedule_bno
+		left join store_member sm_sc on sm_sc.store_member_id = sc.store_employee_bno and sm_sc.store_id = s.store_id
+		left join member m_sc on m_sc.bno = sm_sc.member_bno
 		left join schedule_part sp on sp.bno = sc.part_bno
 		where s.store_id = #{storeId}
 		order by case when f.chk = 0 then 0 else 1 end asc,
@@ -291,5 +380,100 @@
 		  and id = #{id}
 		  and chk = 0
 	</update>
+
+	<insert id="insertTemporaryStoreMember">
+		insert into store_member (
+			store_id,
+			member_bno,
+			position,
+			chk,
+			employment,
+			health,
+			rate,
+			color
+		) values (
+			#{storeId},
+			#{memberBno},
+			'직원',
+			1,
+			'TEMP_FILL',
+			null,
+			null,
+			null
+		)
+	</insert>
+
+	<update id="promoteStoreMemberToTemporary">
+		update store_member
+		set position = '직원',
+			chk = 1,
+			employment = 'TEMP_FILL'
+		where store_member_id = #{storeMemberId}
+	</update>
+
+	<update id="deactivateExpiredTemporaryMembers">
+		update store_member sm
+		left join (
+			select
+				sc.store_employee_bno,
+				max(timestamp(sc.work_date, sc.end_time)) as latest_end_at
+			from schedule sc
+			group by sc.store_employee_bno
+		) work on work.store_employee_bno = sm.store_member_id
+		set sm.chk = 0
+		where sm.store_id = #{storeId}
+		  and sm.position = '직원'
+		  and sm.chk = 1
+		  and sm.employment = 'TEMP_FILL'
+		  and (work.latest_end_at is null or work.latest_end_at < now())
+	</update>
+
+	<select id="countScheduleOverlapForMember" resultType="int">
+		select count(*)
+		from schedule sc
+		join store_member sm on sm.store_member_id = sc.store_employee_bno
+		where sm.store_id = #{storeId}
+		  and sc.store_employee_bno = #{storeMemberId}
+		  and sc.work_date = #{workDate}
+		  and not (sc.end_time &lt;= #{startTime} or sc.start_time &gt;= #{endTime})
+		  <if test="excludeScheduleBno != null">
+		  	and sc.bno != #{excludeScheduleBno}
+		  </if>
+	</select>
+
+	<update id="updateScheduleWorkerForStore">
+		update schedule sc
+		join store_member sm_target on sm_target.store_member_id = #{storeMemberId}
+		join store_member sm_owner on sm_owner.store_member_id = sc.store_employee_bno
+		set sc.store_employee_bno = sm_target.store_member_id
+		where sc.bno = #{scheduleBno}
+		  and sm_owner.store_id = #{storeId}
+		  and sm_owner.position = '직원'
+		  and sm_target.store_id = #{storeId}
+		  and sm_target.position = '직원'
+		  and sm_target.chk = 1
+	</update>
+
+	<insert id="insertScheduleForFill">
+		insert into schedule (
+			store_employee_bno,
+			work_date,
+			start_time,
+			end_time,
+			work_minutes,
+			status,
+			memo,
+			part_bno
+		) values (
+			#{storeMemberId},
+			#{workDate},
+			#{startTime},
+			#{endTime},
+			#{workMinutes},
+			'SCHEDULED',
+			#{memo},
+			#{partBno}
+		)
+	</insert>
 
 </mapper>

@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import kr.co.storefamily.model.FillApply;
 import kr.co.storefamily.model.FillPost;
+import kr.co.storefamily.model.SchedulePart;
 import kr.co.storefamily.model.Store;
 import kr.co.storefamily.model.StoreMember;
 import kr.co.storefamily.model.StoreSchedule;
@@ -169,7 +170,36 @@ public class FillController {
 		}
 
 		model.addAttribute("myStore", store);
+		model.addAttribute("isDirect", Boolean.FALSE);
 		model.addAttribute("schedule", schedule);
+		model.addAttribute("defaultApplyStart", LocalDate.now().toString());
+		model.addAttribute("defaultApplyEnd", LocalDate.now().plusDays(3).toString());
+		return "Fill/store_fill_form";
+	}
+
+	@GetMapping("/stores/{storeId}/fills/new")
+	public String directFillNewForm(@PathVariable("storeId") String storeId, HttpSession session, Model model,
+			RedirectAttributes redirectAttributes) {
+		Integer memberBno = getLoginMemberBno(session, redirectAttributes);
+		if (memberBno == null) {
+			return "redirect:/login";
+		}
+
+		Store store = fillService.findStore(storeId);
+		if (store == null) {
+			redirectAttributes.addFlashAttribute("message", "Store not found.");
+			return "redirect:/store/my";
+		}
+		if (!fillService.canManageStore(storeId, memberBno.intValue())) {
+			redirectAttributes.addFlashAttribute("message", "No permission to create direct fill.");
+			return "redirect:/stores/" + storeId + "/fills";
+		}
+
+		List<SchedulePart> parts = fillService.getScheduleParts(storeId);
+		model.addAttribute("myStore", store);
+		model.addAttribute("isDirect", Boolean.TRUE);
+		model.addAttribute("scheduleParts", parts);
+		model.addAttribute("defaultFillDay", LocalDate.now().toString());
 		model.addAttribute("defaultApplyStart", LocalDate.now().toString());
 		model.addAttribute("defaultApplyEnd", LocalDate.now().plusDays(3).toString());
 		return "Fill/store_fill_form";
@@ -197,6 +227,35 @@ public class FillController {
 		} catch (IllegalArgumentException ex) {
 			redirectAttributes.addFlashAttribute("message", ex.getMessage());
 			return "redirect:/stores/" + storeId + "/schedule/" + scheduleBno + "/fill/new";
+		}
+	}
+
+	@PostMapping("/stores/{storeId}/fills/new")
+	public String directFillCreate(@PathVariable("storeId") String storeId,
+			@RequestParam("title") String title,
+			@RequestParam("content") String content,
+			@RequestParam("fillDay") String fillDay,
+			@RequestParam(value = "partBno", required = false) Integer partBno,
+			@RequestParam(value = "startTime", required = false) String startTime,
+			@RequestParam(value = "endTime", required = false) String endTime,
+			@RequestParam("applyStartDay") String applyStartDay,
+			@RequestParam("applyEndDay") String applyEndDay,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Integer memberBno = getLoginMemberBno(session, redirectAttributes);
+		if (memberBno == null) {
+			return "redirect:/login";
+		}
+
+		String loginId = (String) session.getAttribute("id");
+		String loginName = (String) session.getAttribute("name");
+		try {
+			fillService.createDirectFill(storeId, memberBno.intValue(), loginId, loginName, title, content, fillDay, startTime,
+					endTime, partBno, applyStartDay, applyEndDay);
+			redirectAttributes.addFlashAttribute("message", "Direct fill request has been created.");
+			return "redirect:/stores/" + storeId + "/fills";
+		} catch (IllegalArgumentException ex) {
+			redirectAttributes.addFlashAttribute("message", ex.getMessage());
+			return "redirect:/stores/" + storeId + "/fills/new";
 		}
 	}
 

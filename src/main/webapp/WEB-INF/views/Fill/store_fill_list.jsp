@@ -8,13 +8,15 @@
 <title>대타 요청 목록</title>
 <style>
 	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; }
-	body { margin:0; background:var(--bg); color:var(--text); font-family:"GmarketSansTTFMedium","Malgun Gothic",sans-serif; }
+	body { margin:0; background:var(--bg); color:var(--text); font-family:"Malgun Gothic",sans-serif; }
 	.wrap { max-width:1100px; margin:0 auto; padding:24px 16px 36px; }
-	.top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+	.top { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
 	.title { margin:0; font-size:28px; }
 	.sub { margin:6px 0 0; color:var(--muted); }
+	.actions { display:flex; gap:8px; flex-wrap:wrap; }
 	.btn { display:inline-flex; align-items:center; justify-content:center; min-height:36px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--text); background:#fff; font-weight:700; font-size:13px; }
 	.btn:hover { border-color:var(--point); color:var(--point); }
+	.btn-primary { border-color:#c7dafc; background:#eff6ff; color:#1d4ed8; }
 	.msg { margin:0 0 12px; padding:10px 12px; border-radius:10px; background:#eef4ff; color:#1f3f7f; }
 	.list { display:grid; gap:10px; }
 	.item { display:block; text-decoration:none; color:inherit; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
@@ -38,7 +40,10 @@
 			<h1 class="title">대타 요청 목록</h1>
 			<p class="sub"><strong><c:out value="${myStore.store_name}"/></strong> (<c:out value="${myStore.store_code}"/>)</p>
 		</div>
-		<div>
+		<div class="actions">
+			<c:if test="${canManage}">
+				<a class="btn btn-primary" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/new">사장 직접 모집글 작성</a>
+			</c:if>
 			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}">매장 관리</a>
 			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">스케줄 캘린더</a>
 		</div>
@@ -48,7 +53,7 @@
 
 	<c:choose>
 		<c:when test="${empty fills}">
-			<div class="empty">등록된 대타 요청이 없습니다. 스케줄 상세에서 대타 요청을 생성해 주세요.</div>
+			<div class="empty">등록된 대타 요청이 없습니다. 내 스케줄 상세의 대타 요청 버튼이나 사장 직접 모집글 작성 기능을 이용해 주세요.</div>
 		</c:when>
 		<c:otherwise>
 			<div class="list">
@@ -67,8 +72,14 @@
 							<span>요청자: <c:out value="${fill.name}"/></span>
 							<span>근무일: <c:out value="${fill.fill_day}"/></span>
 							<span>근무시간: <c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/></span>
+							<c:if test="${not empty fill.fill_di_time}">
+								<span>타임: <c:out value="${fill.fill_di_time}"/></span>
+							</c:if>
 							<span>모집기간: <c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></span>
-							<span>지원자수: <c:out value="${fill.apply_su}"/>명</span>
+							<span>지원자: <c:out value="${fill.apply_su}"/>명</span>
+							<c:if test="${fill.schedule_bno == 0}">
+								<span>유형: 직접 모집</span>
+							</c:if>
 						</div>
 					</a>
 				</c:forEach>

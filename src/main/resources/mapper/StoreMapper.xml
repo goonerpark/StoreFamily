@@ -116,6 +116,16 @@
 		where sm.store_id = #{storeId}
 		  and sm.position = '직원'
 		  and sm.chk = 1
+		  and (
+		  	sm.employment is null
+		  	or sm.employment != 'TEMP_FILL'
+		  	or exists (
+		  		select 1
+		  		from schedule sc_keep
+		  		where sc_keep.store_employee_bno = sm.store_member_id
+		  		  and timestamp(sc_keep.work_date, sc_keep.end_time) >= now()
+		  	)
+		  )
 		order by sm.store_member_id desc
 	</select>
 
@@ -125,6 +135,16 @@
 		where store_id = #{storeId}
 		  and position = '직원'
 		  and chk = 1
+		  and (
+		  	employment is null
+		  	or employment != 'TEMP_FILL'
+		  	or exists (
+		  		select 1
+		  		from schedule sc_keep
+		  		where sc_keep.store_employee_bno = store_member.store_member_id
+		  		  and timestamp(sc_keep.work_date, sc_keep.end_time) >= now()
+		  	)
+		  )
 	</select>
 
 	<select id="findEmployeeDetail" resultType="StoreEmployee">

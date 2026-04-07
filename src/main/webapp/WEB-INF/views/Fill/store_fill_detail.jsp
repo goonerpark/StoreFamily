@@ -8,12 +8,12 @@
 <title>대타 요청 상세</title>
 <style>
 	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; --danger:#be123c; }
-	body { margin:0; background:var(--bg); color:var(--text); font-family:"GmarketSansTTFMedium","Malgun Gothic",sans-serif; }
+	body { margin:0; background:var(--bg); color:var(--text); font-family:"Malgun Gothic",sans-serif; }
 	.wrap { max-width:1100px; margin:0 auto; padding:24px 16px 36px; }
 	.top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
 	.title { margin:0; font-size:27px; }
-	.sub { color:var(--muted); margin-top:6px; }
-	.btn { display:inline-flex; align-items:center; justify-content:center; min-height:36px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--text); background:#fff; font-weight:700; font-size:13px; }
+	sub { color:var(--muted); }
+	.btn { display:inline-flex; align-items:center; justify-content:center; min-height:36px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--text); background:#fff; font-weight:700; font-size:13px; cursor:pointer; }
 	.btn:hover { border-color:var(--point); color:var(--point); }
 	.btn-danger { border-color:#f8c9d5; color:var(--danger); }
 	.btn-danger:hover { border-color:var(--danger); color:var(--danger); }
@@ -21,7 +21,7 @@
 	.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
 	.grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
 	.row { display:flex; gap:8px; }
-	.label { width:94px; color:var(--muted); }
+	.label { width:100px; color:var(--muted); flex-shrink:0; }
 	.value { flex:1; }
 	.content { white-space:pre-wrap; line-height:1.5; }
 	.actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
@@ -42,11 +42,11 @@
 	<div class="top">
 		<div>
 			<h1 class="title">대타 요청 상세</h1>
-			<div class="sub"><strong><c:out value="${myStore.store_name}"/></strong> / 요청자 <c:out value="${fill.name}"/></div>
+			<div><strong><c:out value="${myStore.store_name}"/></strong></div>
 		</div>
 		<div>
 			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">목록으로</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">캘린더로</a>
+			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">스케줄로</a>
 		</div>
 	</div>
 
@@ -63,12 +63,24 @@
 			</c:choose>
 		</div>
 		<div class="grid">
-			<div class="row"><div class="label">근무일</div><div class="value"><c:out value="${fill.fill_day}"/></div></div>
-			<div class="row"><div class="label">근무시간</div><div class="value"><c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/> <c:if test="${not empty fill.fill_di_time}">(<c:out value="${fill.fill_di_time}"/>)</c:if></div></div>
-			<div class="row"><div class="label">모집기간</div><div class="value"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></div></div>
-			<div class="row"><div class="label">지원자수</div><div class="value"><c:out value="${fill.apply_su}"/>명</div></div>
 			<div class="row"><div class="label">요청자</div><div class="value"><c:out value="${fill.name}"/> (<c:out value="${fill.id}"/>)</div></div>
-			<div class="row"><div class="label">원본스케줄</div><div class="value">#<c:out value="${fill.schedule_bno}"/> / <c:out value="${fill.schedule_member_name}"/> (<c:out value="${fill.schedule_member_id}"/>)</div></div>
+			<div class="row"><div class="label">근무일</div><div class="value"><c:out value="${fill.fill_day}"/></div></div>
+			<div class="row"><div class="label">근무시간</div><div class="value"><c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/>
+				<c:if test="${not empty fill.fill_di_time}">(<c:out value="${fill.fill_di_time}"/>)</c:if>
+			</div></div>
+			<div class="row"><div class="label">모집기간</div><div class="value"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></div></div>
+			<div class="row"><div class="label">지원자 수</div><div class="value"><c:out value="${fill.apply_su}"/>명</div></div>
+			<div class="row"><div class="label">원본 스케줄</div><div class="value">
+				<c:choose>
+					<c:when test="${fill.schedule_bno != null and fill.schedule_bno > 0}">
+						#<c:out value="${fill.schedule_bno}"/>
+						<c:if test="${not empty fill.schedule_member_name}">
+							/ <c:out value="${fill.schedule_member_name}"/> (<c:out value="${fill.schedule_member_id}"/>)
+						</c:if>
+					</c:when>
+					<c:otherwise>사장 직접 모집글</c:otherwise>
+				</c:choose>
+			</div></div>
 		</div>
 		<div class="card" style="margin:10px 0 0; padding:10px;">
 			<div class="content"><c:out value="${fill.content}"/></div>
@@ -87,7 +99,7 @@
 			</c:if>
 			<c:if test="${canManage and fill.chk == 0}">
 				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/close">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('대타 요청을 마감할까요?');">요청 마감</button>
+					<button class="btn btn-danger" type="submit" onclick="return confirm('이 요청을 마감할까요?');">요청 마감</button>
 				</form>
 			</c:if>
 			<c:if test="${canCancelFill}">
