@@ -17,6 +17,6 @@
 		from store
 		where ceo_bno = #{ceoBno}
 		order by created_at desc
-		limit 1s
+		limit 1
 	</select>
 </mapper>
