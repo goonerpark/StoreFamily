@@ -1,4 +1,5 @@
 import { currentUser, employees, fillPosts, myApplications, recommendedFills, weeklySchedule } from "./mock-data";
+import { storeScheduleDashboard } from "./schedule-mock";
 
 // TODO: Spring MVC를 REST API로 분리하면 이 파일의 mock 반환을 fetch 호출로 교체합니다.
 // 예: fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/stores/${storeId}/fills`)
@@ -29,4 +30,8 @@ export async function getEmployeeDashboard() {
     weeklySchedule,
     recommendedFills,
   };
+}
+
+export async function getStoreScheduleDashboard() {
+  return storeScheduleDashboard;
 }

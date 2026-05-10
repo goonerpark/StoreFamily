@@ -251,6 +251,15 @@
 		order by case when fa.chk = 0 then 0 else 1 end asc, fa.bno asc
 	</select>
 
+	<select id="countOpenFillBySchedule" resultType="int">
+		select count(*)
+		from fill f
+		join store s on s.store_code = f.code
+		where s.store_id = #{storeId}
+		  and f.schedule_bno = #{scheduleBno}
+		  and f.chk in (0, 1)
+	</select>
+
 	<insert id="insertFill" parameterType="FillPost" useGeneratedKeys="true" keyProperty="bno">
 		insert into fill (
 			title,
@@ -327,6 +336,15 @@
 		where fill_bno = #{fillBno}
 		  and id = #{id}
 		  and chk = 0
+		order by bno desc
+		limit 1
+	</select>
+
+	<select id="findAnyApplyByFillAndId" resultType="FillApply">
+		select *
+		from fill_apply
+		where fill_bno = #{fillBno}
+		  and id = #{id}
 		order by bno desc
 		limit 1
 	</select>
@@ -425,7 +443,7 @@
 		  and sm.position = '직원'
 		  and sm.chk = 1
 		  and sm.employment = 'TEMP_FILL'
-		  and (work.latest_end_at is null or work.latest_end_at < now())
+		  and (work.latest_end_at is null or work.latest_end_at &lt; now())
 	</update>
 
 	<select id="countScheduleOverlapForMember" resultType="int">

@@ -1,4 +1,4 @@
-﻿package kr.co.storefamily.service;
+package kr.co.storefamily.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -33,12 +33,16 @@ public class FillServiceImpl implements FillService {
 	private static final int APPLY_CHK_PENDING = 0;
 	private static final int APPLY_CHK_APPROVED = 1;
 	private static final int APPLY_CHK_REJECTED = 2;
+	private static final int APPLY_CHK_CANCELED = 3;
 
 	@Autowired
 	private FillMapper fillMapper;
 
 	@Override
 	public int getLoginMemberBno(String loginId) {
+		if (isBlank(loginId)) {
+			throw new IllegalArgumentException("Login required.");
+		}
 		Integer memberBno = fillMapper.findMemberBnoById(loginId);
 		if (memberBno == null) {
 			throw new IllegalArgumentException("Member not found.");
@@ -99,11 +103,15 @@ public class FillServiceImpl implements FillService {
 	@Transactional
 	public void createFill(String storeId, int scheduleBno, int memberBno, String loginId, String loginName, String title,
 			String content, String applyStartDay, String applyEndDay) {
+		requireLoginId(loginId);
 		requireStoreAndMember(storeId, memberBno);
 
 		StoreSchedule schedule = fillMapper.findScheduleForFillCreate(storeId, scheduleBno, memberBno);
 		if (schedule == null) {
 			throw new IllegalArgumentException("Only your own schedule can be requested as fill.");
+		}
+		if (fillMapper.countOpenFillBySchedule(storeId, scheduleBno) > 0) {
+			throw new IllegalArgumentException("This schedule already has an active fill request.");
 		}
 
 		Store store = requireStore(storeId);
@@ -138,6 +146,7 @@ public class FillServiceImpl implements FillService {
 	@Transactional
 	public void createDirectFill(String storeId, int memberBno, String loginId, String loginName, String title, String content,
 			String fillDay, String startTime, String endTime, Integer partBno, String applyStartDay, String applyEndDay) {
+		requireLoginId(loginId);
 		if (!canManageStore(storeId, memberBno)) {
 			throw new IllegalArgumentException("No permission to create direct fill.");
 		}
@@ -193,6 +202,7 @@ public class FillServiceImpl implements FillService {
 	@Override
 	@Transactional
 	public void applyFill(String storeId, int fillBno, int memberBno, String loginId, String loginName) {
+		requireLoginId(loginId);
 		requireStore(storeId);
 		fillMapper.deactivateExpiredTemporaryMembers(storeId);
 		FillPost fill = requireFill(storeId, fillBno);
@@ -243,7 +253,82 @@ public class FillServiceImpl implements FillService {
 
 	@Override
 	@Transactional
+	public void acceptFill(String storeId, int fillBno, int memberBno, String loginId, String loginName) {
+		requireLoginId(loginId);
+		requireStore(storeId);
+		fillMapper.deactivateExpiredTemporaryMembers(storeId);
+		FillPost fill = requireFill(storeId, fillBno);
+		StoreMember storeMember = fillMapper.findApprovedStoreMember(storeId, memberBno);
+		if (storeMember == null || !POSITION_EMPLOYEE.equals(storeMember.getPosition())) {
+			throw new IllegalArgumentException("Only active employees can accept fill requests.");
+		}
+		if (fill.getChk() == null || fill.getChk().intValue() != FILL_CHK_RECRUITING) {
+			throw new IllegalArgumentException("Fill request is not open.");
+		}
+		if (loginId.equals(fill.getId())) {
+			throw new IllegalArgumentException("Cannot accept your own fill request.");
+		}
+
+		LocalDate today = LocalDate.now();
+		LocalDate startDate = parseRequiredDate(fill.getApply_start_day(), "Invalid apply_start_day data.");
+		LocalDate endDate = parseRequiredDate(fill.getApply_end_day(), "Invalid apply_end_day data.");
+		if (today.isBefore(startDate) || today.isAfter(endDate)) {
+			throw new IllegalArgumentException("Apply period is closed.");
+		}
+
+		LocalDate workDate = parseRequiredDate(fill.getFill_day(), "Invalid fill day data.");
+		LocalTime start = parseRequiredTime(fill.getFill_start_time(), "Invalid fill start time.");
+		LocalTime end = parseRequiredTime(fill.getFill_end_time(), "Invalid fill end time.");
+		if (!end.isAfter(start)) {
+			throw new IllegalArgumentException("Invalid fill time range.");
+		}
+
+		Integer excludeSchedule = (fill.getSchedule_bno() != null && fill.getSchedule_bno().intValue() > 0)
+				? fill.getSchedule_bno()
+				: null;
+		int overlap = fillMapper.countScheduleOverlapForMember(storeId, storeMember.getStore_member_id(), workDate.toString(),
+				start.toString(), end.toString(), excludeSchedule);
+		if (overlap > 0) {
+			throw new IllegalArgumentException("You already have an overlapping schedule.");
+		}
+
+		FillApply myApply = fillMapper.findAnyApplyByFillAndId(fillBno, loginId);
+		int winnerApplyBno = -1;
+		if (myApply == null || myApply.getChk() == null || myApply.getChk().intValue() == APPLY_CHK_CANCELED) {
+			FillApply apply = new FillApply();
+			apply.setW_name(fill.getName());
+			apply.setM_name(isBlank(loginName) ? loginId : loginName.trim());
+			apply.setId(loginId);
+			apply.setCode(fill.getCode());
+			apply.setSchedule_bno(fill.getSchedule_bno());
+			apply.setFill_bno(fill.getBno());
+			apply.setW_code(fill.getCode());
+			apply.setChk(APPLY_CHK_APPROVED);
+			apply.setResume_bno(0);
+			apply.setResume_title(null);
+			if (fillMapper.insertFillApply(apply) != 1) {
+				throw new IllegalArgumentException("Failed to accept fill request.");
+			}
+			winnerApplyBno = apply.getBno() == null ? -1 : apply.getBno().intValue();
+		} else if (myApply.getChk().intValue() == APPLY_CHK_PENDING) {
+			fillMapper.updateFillApplyStatus(myApply.getBno().intValue(), APPLY_CHK_APPROVED);
+			winnerApplyBno = myApply.getBno().intValue();
+		} else if (myApply.getChk().intValue() == APPLY_CHK_APPROVED) {
+			throw new IllegalArgumentException("You already accepted this fill request.");
+		} else {
+			throw new IllegalArgumentException("Rejected applications cannot be accepted again.");
+		}
+
+		applyAcceptedWorkerToSchedule(storeId, fill, storeMember, start, end, workDate);
+		fillMapper.updateOtherPendingApplyStatus(fillBno, winnerApplyBno, APPLY_CHK_REJECTED);
+		fillMapper.updateFillStatus(fillBno, FILL_CHK_APPROVED);
+		fillMapper.updateFillApplyCount(fillBno);
+	}
+
+	@Override
+	@Transactional
 	public void cancelMyApply(String storeId, int fillBno, int memberBno, String loginId) {
+		requireLoginId(loginId);
 		requireStoreAndMember(storeId, memberBno);
 		requireFill(storeId, fillBno);
 		int updated = fillMapper.cancelMyApply(fillBno, loginId);
@@ -316,34 +401,7 @@ public class FillServiceImpl implements FillService {
 			throw new IllegalArgumentException("Approved employee already has overlapping schedule.");
 		}
 
-		if (fill.getSchedule_bno() != null && fill.getSchedule_bno().intValue() > 0) {
-			StoreSchedule schedule = fillMapper.findScheduleByStoreAndId(storeId, fill.getSchedule_bno().intValue());
-			if (schedule == null) {
-				throw new IllegalArgumentException("Source schedule not found.");
-			}
-			int updated = fillMapper.updateScheduleWorkerForStore(storeId, fill.getSchedule_bno().intValue(),
-					approvedMember.getStore_member_id());
-			if (updated != 1) {
-				throw new IllegalArgumentException("Failed to update source schedule worker.");
-			}
-		} else {
-			Integer partBno = null;
-			if (!isBlank(fill.getFill_di_time())) {
-				List<SchedulePart> parts = fillMapper.findSchedulePartsByStoreId(storeId);
-				for (SchedulePart part : parts) {
-					if (fill.getFill_di_time().equals(part.getPart_name())) {
-						partBno = part.getBno();
-						break;
-					}
-				}
-			}
-			int minutes = (int) ChronoUnit.MINUTES.between(start, end);
-			int inserted = fillMapper.insertScheduleForFill(approvedMember.getStore_member_id(), workDate.toString(),
-					start.toString(), end.toString(), minutes, "Created from fill approval #" + fill.getBno(), partBno);
-			if (inserted != 1) {
-				throw new IllegalArgumentException("Failed to create schedule from direct fill approval.");
-			}
-		}
+		applyAcceptedWorkerToSchedule(storeId, fill, approvedMember, start, end, workDate);
 
 		fillMapper.updateFillApplyStatus(applyBno, APPLY_CHK_APPROVED);
 		fillMapper.updateOtherPendingApplyStatus(fillBno, applyBno, APPLY_CHK_REJECTED);
@@ -388,17 +446,24 @@ public class FillServiceImpl implements FillService {
 	@Override
 	@Transactional
 	public void cancelFillByRequester(String storeId, int fillBno, int memberBno, String loginId) {
+		requireLoginId(loginId);
 		requireStoreAndMember(storeId, memberBno);
 		FillPost fill = requireFill(storeId, fillBno);
 		if (!loginId.equals(fill.getId())) {
 			throw new IllegalArgumentException("Only requester can cancel.");
 		}
-		if (fill.getChk() != null && fill.getChk().intValue() == FILL_CHK_APPROVED) {
-			throw new IllegalArgumentException("Approved fill cannot be canceled.");
+		if (fill.getChk() == null || fill.getChk().intValue() != FILL_CHK_RECRUITING) {
+			throw new IllegalArgumentException("Only open fill requests can be canceled.");
 		}
 		fillMapper.updateFillStatus(fillBno, FILL_CHK_CANCELED);
 		fillMapper.updateOtherPendingApplyStatus(fillBno, -1, APPLY_CHK_REJECTED);
 		fillMapper.updateFillApplyCount(fillBno);
+	}
+
+	private void requireLoginId(String loginId) {
+		if (isBlank(loginId)) {
+			throw new IllegalArgumentException("Login required.");
+		}
 	}
 
 	private Store requireStore(String storeId) {
@@ -428,6 +493,39 @@ public class FillServiceImpl implements FillService {
 			throw new IllegalArgumentException("Fill request not found.");
 		}
 		return fill;
+	}
+
+	private void applyAcceptedWorkerToSchedule(String storeId, FillPost fill, StoreMember acceptedMember, LocalTime start,
+			LocalTime end, LocalDate workDate) {
+		if (fill.getSchedule_bno() != null && fill.getSchedule_bno().intValue() > 0) {
+			StoreSchedule schedule = fillMapper.findScheduleByStoreAndId(storeId, fill.getSchedule_bno().intValue());
+			if (schedule == null) {
+				throw new IllegalArgumentException("Source schedule not found.");
+			}
+			int updated = fillMapper.updateScheduleWorkerForStore(storeId, fill.getSchedule_bno().intValue(),
+					acceptedMember.getStore_member_id());
+			if (updated != 1) {
+				throw new IllegalArgumentException("Failed to update source schedule worker.");
+			}
+			return;
+		}
+
+		Integer partBno = null;
+		if (!isBlank(fill.getFill_di_time())) {
+			List<SchedulePart> parts = fillMapper.findSchedulePartsByStoreId(storeId);
+			for (SchedulePart part : parts) {
+				if (fill.getFill_di_time().equals(part.getPart_name())) {
+					partBno = part.getBno();
+					break;
+				}
+			}
+		}
+		int minutes = (int) ChronoUnit.MINUTES.between(start, end);
+		int inserted = fillMapper.insertScheduleForFill(acceptedMember.getStore_member_id(), workDate.toString(),
+				start.toString(), end.toString(), minutes, "Created from fill acceptance #" + fill.getBno(), partBno);
+		if (inserted != 1) {
+			throw new IllegalArgumentException("Failed to create schedule from direct fill acceptance.");
+		}
 	}
 
 	private String normalizeRequiredText(String value, String message) {

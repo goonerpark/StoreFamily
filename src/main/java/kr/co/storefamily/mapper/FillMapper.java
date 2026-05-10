@@ -1,4 +1,4 @@
-﻿package kr.co.storefamily.mapper;
+package kr.co.storefamily.mapper;
 
 import java.util.List;
 
@@ -31,12 +31,14 @@ public interface FillMapper {
 	FillPost findFillDetailByStore(@Param("storeId") String storeId, @Param("fillBno") int fillBno);
 	List<FillPost> findFillListByStore(@Param("storeId") String storeId);
 	List<FillApply> findFillApplyList(@Param("fillBno") int fillBno);
+	int countOpenFillBySchedule(@Param("storeId") String storeId, @Param("scheduleBno") int scheduleBno);
 
 	int insertFill(FillPost fill);
 	int insertFillApply(FillApply fillApply);
 
 	int countActiveApplyByFillAndId(@Param("fillBno") int fillBno, @Param("id") String id);
 	FillApply findMyApplyByFillAndId(@Param("fillBno") int fillBno, @Param("id") String id);
+	FillApply findAnyApplyByFillAndId(@Param("fillBno") int fillBno, @Param("id") String id);
 	FillApply findFillApplyByStore(@Param("storeId") String storeId, @Param("fillBno") int fillBno, @Param("applyBno") int applyBno);
 
 	int updateFillApplyCount(@Param("fillBno") int fillBno);

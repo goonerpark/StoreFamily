@@ -2,164 +2,226 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>대타 요청 상세</title>
-<style>
-	:root { --bg:#f6f7fb; --card:#fff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280; --point:#1f6feb; --danger:#be123c; }
-	body { margin:0; background:var(--bg); color:var(--text); font-family:"Malgun Gothic",sans-serif; }
-	.wrap { max-width:1100px; margin:0 auto; padding:24px 16px 36px; }
-	.top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
-	.title { margin:0; font-size:27px; }
-	sub { color:var(--muted); }
-	.btn { display:inline-flex; align-items:center; justify-content:center; min-height:36px; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--text); background:#fff; font-weight:700; font-size:13px; cursor:pointer; }
-	.btn:hover { border-color:var(--point); color:var(--point); }
-	.btn-danger { border-color:#f8c9d5; color:var(--danger); }
-	.btn-danger:hover { border-color:var(--danger); color:var(--danger); }
-	.msg { margin:0 0 12px; padding:10px 12px; border-radius:10px; background:#eef4ff; color:#1f3f7f; }
-	.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; }
-	.grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-	.row { display:flex; gap:8px; }
-	.label { width:100px; color:var(--muted); flex-shrink:0; }
-	.value { flex:1; }
-	.content { white-space:pre-wrap; line-height:1.5; }
-	.actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-	.badge { font-size:12px; font-weight:700; border-radius:999px; padding:4px 8px; }
-	.s0 { background:#e8f7ee; color:#166534; }
-	.s1 { background:#e7f0ff; color:#1d4ed8; }
-	.s2 { background:#f3f4f6; color:#4b5563; }
-	.s3 { background:#fff1f2; color:#9f1239; }
-	.table { width:100%; border-collapse:collapse; }
-	.table th,.table td { border-bottom:1px solid var(--line); padding:10px 8px; text-align:left; font-size:14px; }
-	.table th { color:var(--muted); font-weight:700; }
-	.inline { display:inline; margin:0; }
-	@media (max-width:820px){ .grid{grid-template-columns:1fr;} .wrap{padding:16px 12px 24px;} }
-</style>
+<title>StoreFamily - 대타 요청 상세</title>
 </head>
 <body>
-<div class="wrap">
-	<div class="top">
-		<div>
-			<h1 class="title">대타 요청 상세</h1>
-			<div><strong><c:out value="${myStore.store_name}"/></strong></div>
-		</div>
-		<div>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">목록으로</a>
-			<a class="btn" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">스케줄로</a>
-		</div>
-	</div>
+<c:set var="statusLabel" value="대기중"/>
+<c:set var="statusClass" value="bg-[#d1fae5] text-[#059669]"/>
+<c:if test="${fill.chk == 1}">
+	<c:set var="statusLabel" value="수락됨"/>
+	<c:set var="statusClass" value="bg-[#e0f2fe] text-[#0369a1]"/>
+</c:if>
+<c:if test="${fill.chk == 2}">
+	<c:set var="statusLabel" value="마감"/>
+	<c:set var="statusClass" value="bg-surface-container text-secondary"/>
+</c:if>
+<c:if test="${fill.chk == 3}">
+	<c:set var="statusLabel" value="취소됨"/>
+	<c:set var="statusClass" value="bg-error-container text-on-error-container"/>
+</c:if>
 
-	<c:if test="${not empty message}"><div class="msg"><c:out value="${message}"/></div></c:if>
+<main class="min-h-screen bg-background">
+	<div class="mx-auto max-w-6xl space-y-lg p-lg md:p-xl">
+		<section class="flex flex-col gap-md lg:flex-row lg:items-end lg:justify-between">
+			<div>
+				<p class="mb-xs text-label-sm font-bold text-primary">Fill Request</p>
+				<h1 class="mb-0 font-h1 text-h1 font-bold text-on-surface">대타 요청 상세</h1>
+				<p class="mt-sm text-secondary"><strong><c:out value="${myStore.store_name}"/></strong>의 대타 요청 정보입니다.</p>
+			</div>
+			<div class="flex flex-wrap items-center gap-sm">
+				<a class="inline-flex items-center gap-xs rounded-lg border border-outline-variant bg-white px-md py-sm font-bold text-secondary hover:bg-surface-container" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills">
+					<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+					목록
+				</a>
+				<a class="inline-flex items-center gap-xs rounded-lg border border-outline-variant bg-white px-md py-sm font-bold text-secondary hover:bg-surface-container" href="${pageContext.request.contextPath}/stores/${myStore.store_id}/schedules">
+					<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+					스케줄
+				</a>
+			</div>
+		</section>
 
-	<div class="card">
-		<div class="top" style="margin-bottom:8px;">
-			<h2 style="margin:0;"><c:out value="${fill.title}"/></h2>
-			<c:choose>
-				<c:when test="${fill.chk == 0}"><span class="badge s0">모집중</span></c:when>
-				<c:when test="${fill.chk == 1}"><span class="badge s1">승인완료</span></c:when>
-				<c:when test="${fill.chk == 2}"><span class="badge s2">마감</span></c:when>
-				<c:otherwise><span class="badge s3">취소</span></c:otherwise>
-			</c:choose>
-		</div>
-		<div class="grid">
-			<div class="row"><div class="label">요청자</div><div class="value"><c:out value="${fill.name}"/> (<c:out value="${fill.id}"/>)</div></div>
-			<div class="row"><div class="label">근무일</div><div class="value"><c:out value="${fill.fill_day}"/></div></div>
-			<div class="row"><div class="label">근무시간</div><div class="value"><c:out value="${fn:substring(fill.fill_start_time,0,5)}"/> ~ <c:out value="${fn:substring(fill.fill_end_time,0,5)}"/>
-				<c:if test="${not empty fill.fill_di_time}">(<c:out value="${fill.fill_di_time}"/>)</c:if>
-			</div></div>
-			<div class="row"><div class="label">모집기간</div><div class="value"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></div></div>
-			<div class="row"><div class="label">지원자 수</div><div class="value"><c:out value="${fill.apply_su}"/>명</div></div>
-			<div class="row"><div class="label">원본 스케줄</div><div class="value">
-				<c:choose>
-					<c:when test="${fill.schedule_bno != null and fill.schedule_bno > 0}">
-						#<c:out value="${fill.schedule_bno}"/>
-						<c:if test="${not empty fill.schedule_member_name}">
-							/ <c:out value="${fill.schedule_member_name}"/> (<c:out value="${fill.schedule_member_id}"/>)
-						</c:if>
-					</c:when>
-					<c:otherwise>사장 직접 모집글</c:otherwise>
-				</c:choose>
-			</div></div>
-		</div>
-		<div class="card" style="margin:10px 0 0; padding:10px;">
-			<div class="content"><c:out value="${fill.content}"/></div>
-		</div>
+		<c:if test="${not empty message}">
+			<div class="rounded-xl border border-primary/20 bg-primary-fixed/40 px-md py-sm text-on-primary-fixed-variant">
+				<c:out value="${message}"/>
+			</div>
+		</c:if>
 
-		<div class="actions">
-			<c:if test="${canApply}">
-				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply">
-					<button class="btn" type="submit">지원하기</button>
-				</form>
-			</c:if>
-			<c:if test="${hasPendingMyApply}">
-				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply/cancel">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('지원을 취소할까요?');">지원 취소</button>
-				</form>
-			</c:if>
-			<c:if test="${canManage and fill.chk == 0}">
-				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/close">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('이 요청을 마감할까요?');">요청 마감</button>
-				</form>
-			</c:if>
-			<c:if test="${canCancelFill}">
-				<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/cancel">
-					<button class="btn btn-danger" type="submit" onclick="return confirm('요청을 취소할까요?');">요청 취소</button>
-				</form>
-			</c:if>
-		</div>
-	</div>
+		<section class="grid grid-cols-1 gap-lg lg:grid-cols-3">
+			<article class="rounded-xl border border-surface-variant bg-white p-lg shadow-sm lg:col-span-2">
+				<div class="mb-md flex flex-wrap items-start justify-between gap-md">
+					<div class="min-w-0">
+						<div class="mb-sm flex flex-wrap items-center gap-sm">
+							<span class="inline-flex items-center gap-xs rounded-lg px-md py-xs text-label-sm font-bold ${statusClass}">
+								<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+								${statusLabel}
+							</span>
+							<c:if test="${isRequester}">
+								<span class="rounded-full bg-primary-fixed px-sm py-0.5 text-[10px] font-bold text-on-primary-fixed">내 요청</span>
+							</c:if>
+						</div>
+						<h2 class="mb-0 font-h2 text-h2 font-bold text-on-surface"><c:out value="${fill.title}"/></h2>
+					</div>
+				</div>
 
-	<c:if test="${showApplyList}">
-		<div class="card">
-			<h3 style="margin-top:0;">지원자 목록</h3>
-			<c:choose>
-				<c:when test="${empty applies}">
-					<div style="color:var(--muted);">아직 지원자가 없습니다.</div>
-				</c:when>
-				<c:otherwise>
-					<table class="table">
-						<thead>
-							<tr>
-								<th>지원자</th>
-								<th>연락처</th>
-								<th>상태</th>
-								<c:if test="${canManage and fill.chk == 0}"><th>처리</th></c:if>
-							</tr>
-						</thead>
-						<tbody>
-						<c:forEach var="ap" items="${applies}">
-							<tr>
-								<td><c:out value="${ap.m_name}"/> (<c:out value="${ap.id}"/>)</td>
-								<td><c:out value="${ap.applicant_phone}"/></td>
-								<td>
-									<c:choose>
-										<c:when test="${ap.chk == 0}"><span class="badge s0">지원대기</span></c:when>
-										<c:when test="${ap.chk == 1}"><span class="badge s1">승인</span></c:when>
-										<c:when test="${ap.chk == 2}"><span class="badge s2">거절</span></c:when>
-										<c:otherwise><span class="badge s3">지원취소</span></c:otherwise>
-									</c:choose>
-								</td>
-								<c:if test="${canManage and fill.chk == 0}">
-								<td>
-									<c:if test="${ap.chk == 0}">
-										<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/approve">
-											<button class="btn" type="submit">승인</button>
-										</form>
-										<form class="inline" method="post" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/reject">
-											<button class="btn btn-danger" type="submit">거절</button>
-										</form>
+				<div class="grid grid-cols-1 gap-md rounded-xl bg-surface-container-low p-md md:grid-cols-2">
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">근무 날짜</p>
+						<p class="mb-0 font-bold text-on-surface"><c:out value="${fill.fill_day}"/></p>
+					</div>
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">근무 시간</p>
+						<p class="mb-0 font-bold text-on-surface">${fn:substring(fill.fill_start_time,0,5)} - ${fn:substring(fill.fill_end_time,0,5)}</p>
+					</div>
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">요청자</p>
+						<p class="mb-0 font-bold text-on-surface"><c:out value="${fill.name}"/> (<c:out value="${fill.id}"/>)</p>
+					</div>
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">모집 기간</p>
+						<p class="mb-0 font-bold text-on-surface"><c:out value="${fill.apply_start_day}"/> ~ <c:out value="${fill.apply_end_day}"/></p>
+					</div>
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">근무 파트</p>
+						<p class="mb-0 font-bold text-on-surface">
+							<c:choose>
+								<c:when test="${empty fill.fill_di_time}">파트 미지정</c:when>
+								<c:otherwise><c:out value="${fill.fill_di_time}"/></c:otherwise>
+							</c:choose>
+						</p>
+					</div>
+					<div>
+						<p class="mb-xs text-label-sm font-bold text-secondary">원본 스케줄</p>
+						<p class="mb-0 font-bold text-on-surface">
+							<c:choose>
+								<c:when test="${fill.schedule_bno != null and fill.schedule_bno > 0}">#<c:out value="${fill.schedule_bno}"/></c:when>
+								<c:otherwise>직접 모집</c:otherwise>
+							</c:choose>
+						</p>
+					</div>
+				</div>
+
+				<div class="mt-lg">
+					<p class="mb-sm text-label-sm font-bold text-secondary">요청 사유</p>
+					<div class="min-h-[120px] whitespace-pre-wrap rounded-xl border border-surface-variant bg-white p-md text-on-surface">
+						<c:out value="${fill.content}"/>
+					</div>
+				</div>
+
+				<div class="mt-lg flex flex-wrap gap-sm">
+					<c:if test="${canAccept}">
+						<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/accept">
+							<button class="inline-flex items-center gap-xs rounded-lg bg-primary px-lg py-sm font-bold text-on-primary hover:opacity-90" type="submit">
+								<span class="material-symbols-outlined text-[20px]">check_circle</span>
+								수락하기
+							</button>
+						</form>
+					</c:if>
+					<c:if test="${canApply}">
+						<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply">
+							<button class="inline-flex items-center gap-xs rounded-lg border border-outline-variant bg-white px-lg py-sm font-bold text-on-surface hover:bg-surface-container" type="submit">
+								<span class="material-symbols-outlined text-[20px]">how_to_reg</span>
+								지원만 하기
+							</button>
+						</form>
+					</c:if>
+					<c:if test="${hasPendingMyApply}">
+						<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/apply/cancel">
+							<button class="inline-flex items-center gap-xs rounded-lg border border-error-container bg-white px-lg py-sm font-bold text-error hover:bg-error-container" type="submit" onclick="return confirm('지원 내역을 취소할까요?');">
+								<span class="material-symbols-outlined text-[20px]">cancel</span>
+								지원 취소
+							</button>
+						</form>
+					</c:if>
+					<c:if test="${canCancelFill}">
+						<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/cancel">
+							<button class="inline-flex items-center gap-xs rounded-lg border border-error-container bg-white px-lg py-sm font-bold text-error hover:bg-error-container" type="submit" onclick="return confirm('대타 요청을 취소할까요?');">
+								<span class="material-symbols-outlined text-[20px]">delete</span>
+								요청 취소
+							</button>
+						</form>
+					</c:if>
+					<c:if test="${canManage and fill.chk == 0}">
+						<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/close">
+							<button class="inline-flex items-center gap-xs rounded-lg border border-outline-variant bg-white px-lg py-sm font-bold text-secondary hover:bg-surface-container" type="submit" onclick="return confirm('대타 요청을 마감할까요?');">
+								<span class="material-symbols-outlined text-[20px]">lock</span>
+								마감
+							</button>
+						</form>
+					</c:if>
+				</div>
+			</article>
+
+			<aside class="space-y-lg">
+				<div class="rounded-xl border border-surface-variant bg-white p-lg shadow-sm">
+					<h3 class="mb-md flex items-center gap-xs font-h3 text-h3">
+						<span class="material-symbols-outlined text-primary">group</span>
+						지원/수락 현황
+					</h3>
+					<c:choose>
+						<c:when test="${empty applies}">
+							<div class="rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-lg text-center text-secondary">
+								아직 지원자가 없습니다.
+							</div>
+						</c:when>
+						<c:otherwise>
+							<div class="space-y-sm">
+								<c:forEach var="ap" items="${applies}">
+									<c:set var="applyLabel" value="대기"/>
+									<c:set var="applyClass" value="bg-[#d1fae5] text-[#059669]"/>
+									<c:if test="${ap.chk == 1}">
+										<c:set var="applyLabel" value="수락됨"/>
+										<c:set var="applyClass" value="bg-[#e0f2fe] text-[#0369a1]"/>
 									</c:if>
-								</td>
-								</c:if>
-							</tr>
-						</c:forEach>
-						</tbody>
-					</table>
-				</c:otherwise>
-			</c:choose>
-		</div>
-	</c:if>
-</div>
+									<c:if test="${ap.chk == 2}">
+										<c:set var="applyLabel" value="거절"/>
+										<c:set var="applyClass" value="bg-surface-container text-secondary"/>
+									</c:if>
+									<c:if test="${ap.chk == 3}">
+										<c:set var="applyLabel" value="취소"/>
+										<c:set var="applyClass" value="bg-error-container text-on-error-container"/>
+									</c:if>
+									<div class="rounded-xl border border-surface-variant bg-surface-container-low p-md">
+										<div class="flex items-start justify-between gap-sm">
+											<div>
+												<p class="mb-xs font-bold text-on-surface"><c:out value="${ap.m_name}"/></p>
+												<p class="mb-0 text-label-sm text-secondary"><c:out value="${ap.applicant_phone}"/></p>
+											</div>
+											<span class="rounded-lg px-sm py-xs text-[10px] font-bold ${applyClass}">${applyLabel}</span>
+										</div>
+										<c:if test="${canManage and fill.chk == 0 and ap.chk == 0}">
+											<div class="mt-sm flex gap-xs">
+												<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/approve">
+													<button class="rounded-lg bg-primary px-md py-xs text-label-sm font-bold text-on-primary" type="submit">승인</button>
+												</form>
+												<form method="post" data-submit-once="true" action="${pageContext.request.contextPath}/stores/${myStore.store_id}/fills/${fill.bno}/applications/${ap.bno}/reject">
+													<button class="rounded-lg border border-error-container px-md py-xs text-label-sm font-bold text-error" type="submit">거절</button>
+												</form>
+											</div>
+										</c:if>
+									</div>
+								</c:forEach>
+							</div>
+						</c:otherwise>
+					</c:choose>
+				</div>
+			</aside>
+		</section>
+	</div>
+</main>
+<script>
+	(function() {
+		document.querySelectorAll('form[data-submit-once="true"]').forEach(function(form) {
+			form.addEventListener('submit', function() {
+				form.querySelectorAll('button[type="submit"]').forEach(function(button) {
+					button.disabled = true;
+					button.classList.add('opacity-60', 'cursor-not-allowed');
+				});
+			});
+		});
+	})();
+</script>
 </body>
 </html>

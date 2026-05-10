@@ -1,4 +1,4 @@
-﻿package kr.co.storefamily.service;
+package kr.co.storefamily.service;
 
 import java.util.List;
 
@@ -27,6 +27,7 @@ public interface FillService {
 	void createDirectFill(String storeId, int memberBno, String loginId, String loginName, String title, String content,
 			String fillDay, String startTime, String endTime, Integer partBno, String applyStartDay, String applyEndDay);
 	void applyFill(String storeId, int fillBno, int memberBno, String loginId, String loginName);
+	void acceptFill(String storeId, int fillBno, int memberBno, String loginId, String loginName);
 	void cancelMyApply(String storeId, int fillBno, int memberBno, String loginId);
 	void approveApply(String storeId, int fillBno, int applyBno, int memberBno);
 	void rejectApply(String storeId, int fillBno, int applyBno, int memberBno);

@@ -15,6 +15,58 @@ export type FillPost = {
   bonus?: string;
 };
 
+export type ScheduleViewMode = "month" | "week";
+
+export type ShiftType = "open" | "middle" | "close";
+
+export type ShiftStatus = "scheduled" | "confirmed" | "conflict" | "shortage";
+
+export type ScheduleStore = {
+  id: string;
+  name: string;
+};
+
+export type ScheduleEmployee = {
+  id: number;
+  name: string;
+  role: string;
+  initials: string;
+  weeklyHours: number;
+  maxWeeklyHours: number;
+};
+
+export type StoreShift = {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  role: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: ShiftType;
+  status: ShiftStatus;
+};
+
+export type ScheduleSummary = {
+  totalHours: number;
+  estimatedLaborCost: number;
+  openRate: number;
+  middleRate: number;
+  closeRate: number;
+  shortageCount: number;
+  conflictCount: number;
+};
+
+export type StoreScheduleDashboard = {
+  stores: ScheduleStore[];
+  selectedStoreId: string;
+  employees: ScheduleEmployee[];
+  shifts: StoreShift[];
+  summary: ScheduleSummary;
+  baseMonth: string;
+  today: string;
+};
+
 export type FillApplication = {
   id: number;
   title: string;

@@ -1,7 +1,8 @@
-﻿package kr.co.storefamily.controller;
+package kr.co.storefamily.controller;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpSession;
@@ -53,7 +54,9 @@ public class FillController {
 	}
 
 	@GetMapping("/stores/{storeId}/fills")
-	public String fillList(@PathVariable("storeId") String storeId, HttpSession session, Model model,
+	public String fillList(@PathVariable("storeId") String storeId,
+			@RequestParam(value = "status", required = false, defaultValue = "all") String status,
+			HttpSession session, Model model,
 			RedirectAttributes redirectAttributes) {
 		Integer memberBno = getLoginMemberBno(session, redirectAttributes);
 		if (memberBno == null) {
@@ -72,13 +75,25 @@ public class FillController {
 			return "redirect:/store/my";
 		}
 
-		List<FillPost> fills = fillService.getStoreFillList(storeId);
+		List<FillPost> allFills = fillService.getStoreFillList(storeId);
+		List<FillPost> fills = new ArrayList<FillPost>(allFills);
+		String normalizedStatus = normalizeStatus(status);
+		String loginId = (String) session.getAttribute("id");
+		if (!"all".equals(normalizedStatus)) {
+			fills.removeIf(fill -> !matchesStatus(fill, normalizedStatus, loginId));
+		}
 		boolean canManage = fillService.canManageStore(storeId, memberBno.intValue());
 
 		model.addAttribute("myStore", store);
 		model.addAttribute("fills", fills);
 		model.addAttribute("canManage", Boolean.valueOf(canManage));
 		model.addAttribute("storeMember", storeMember);
+		model.addAttribute("loginId", loginId);
+		model.addAttribute("status", normalizedStatus);
+		model.addAttribute("openCount", Integer.valueOf(countByStatus(allFills, 0)));
+		model.addAttribute("acceptedCount", Integer.valueOf(countByStatus(allFills, 1)));
+		model.addAttribute("closedCount", Integer.valueOf(countByStatus(allFills, 2)));
+		model.addAttribute("canceledCount", Integer.valueOf(countByStatus(allFills, 3)));
 		return "Fill/store_fill_list";
 	}
 
@@ -133,8 +148,8 @@ public class FillController {
 		}
 
 		boolean canApply = isEmployee && !isRequester && recruitOpen && periodOpen && !hasActiveMyApply;
-		boolean canCancelFill = isRequester && fill.getChk() != null
-				&& fill.getChk().intValue() != FILL_CHK_APPROVED && fill.getChk().intValue() != FILL_CHK_CANCELED;
+		boolean canAccept = isEmployee && !isRequester && recruitOpen && periodOpen && !hasActiveMyApply;
+		boolean canCancelFill = isRequester && fill.getChk() != null && fill.getChk().intValue() == FILL_CHK_RECRUITING;
 		boolean showApplyList = canManage || isRequester;
 
 		model.addAttribute("myStore", store);
@@ -143,10 +158,30 @@ public class FillController {
 		model.addAttribute("canManage", Boolean.valueOf(canManage));
 		model.addAttribute("isRequester", Boolean.valueOf(isRequester));
 		model.addAttribute("canApply", Boolean.valueOf(canApply));
+		model.addAttribute("canAccept", Boolean.valueOf(canAccept));
 		model.addAttribute("hasPendingMyApply", Boolean.valueOf(hasPendingMyApply));
 		model.addAttribute("canCancelFill", Boolean.valueOf(canCancelFill));
 		model.addAttribute("showApplyList", Boolean.valueOf(showApplyList));
 		return "Fill/store_fill_detail";
+	}
+
+	@PostMapping("/stores/{storeId}/fills/{fillBno}/accept")
+	public String acceptFill(@PathVariable("storeId") String storeId, @PathVariable("fillBno") int fillBno,
+			HttpSession session, RedirectAttributes redirectAttributes) {
+		Integer memberBno = getLoginMemberBno(session, redirectAttributes);
+		if (memberBno == null) {
+			return "redirect:/login";
+		}
+
+		String loginId = (String) session.getAttribute("id");
+		String loginName = (String) session.getAttribute("name");
+		try {
+			fillService.acceptFill(storeId, fillBno, memberBno.intValue(), loginId, loginName);
+			redirectAttributes.addFlashAttribute("message", "Fill request accepted.");
+		} catch (IllegalArgumentException ex) {
+			redirectAttributes.addFlashAttribute("message", ex.getMessage());
+		}
+		return "redirect:/stores/" + storeId + "/fills/" + fillBno;
 	}
 
 	@GetMapping("/stores/{storeId}/schedule/{scheduleBno}/fill/new")
@@ -395,5 +430,49 @@ public class FillController {
 
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
+	}
+
+	private String normalizeStatus(String status) {
+		if ("open".equals(status) || "accepted".equals(status) || "closed".equals(status) || "canceled".equals(status)
+				|| "mine".equals(status)) {
+			return status;
+		}
+		return "all";
+	}
+
+	private boolean matchesStatus(FillPost fill, String status, String loginId) {
+		if (fill == null || fill.getChk() == null) {
+			return false;
+		}
+		if ("mine".equals(status)) {
+			return loginId != null && loginId.equals(fill.getId());
+		}
+		int chk = fill.getChk().intValue();
+		if ("open".equals(status)) {
+			return chk == 0;
+		}
+		if ("accepted".equals(status)) {
+			return chk == 1;
+		}
+		if ("closed".equals(status)) {
+			return chk == 2;
+		}
+		if ("canceled".equals(status)) {
+			return chk == 3;
+		}
+		return true;
+	}
+
+	private int countByStatus(List<FillPost> fills, int chk) {
+		int count = 0;
+		if (fills == null) {
+			return count;
+		}
+		for (FillPost fill : fills) {
+			if (fill != null && fill.getChk() != null && fill.getChk().intValue() == chk) {
+				count++;
+			}
+		}
+		return count;
 	}
 }
