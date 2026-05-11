@@ -3,6 +3,7 @@ package kr.co.storefamily.service;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,9 @@ public class JoinServiceImpl implements JoinService {
 
 	@Autowired
 	private JoinRepository joinRepository;
+
+	@Autowired
+	private PasswordEncoder passwordEncoder;
 
 	@Override
 	public List<Local_Do> local_do_list() {
@@ -62,7 +66,7 @@ public class JoinServiceImpl implements JoinService {
 		Member member = new Member();
 		member.setName(requestDto.getName());
 		member.setId(requestDto.getId());
-		member.setPwd(requestDto.getPwd());
+		member.setPwd(passwordEncoder.encode(requestDto.getPwd()));
 		member.setEmail(requestDto.getEmail());
 		member.setBth(formatBirthDate(requestDto.getBirthDate()));
 		member.setGender(requestDto.getGender());

@@ -9,6 +9,7 @@ import kr.co.storefamily.model.Member;
 public interface LoginMapper {
 
 	Member getLogin(@Param("id") String id, @Param("pwd") String pwd);
+	Member getMemberById(@Param("id") String id);
 	Member getStoreByCeoBno(@Param("ceoBno") int ceoBno);
 
 }

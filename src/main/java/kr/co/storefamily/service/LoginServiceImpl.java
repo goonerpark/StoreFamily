@@ -1,6 +1,7 @@
 package kr.co.storefamily.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import kr.co.storefamily.dto.LoginRequestDto;
@@ -17,10 +18,13 @@ public class LoginServiceImpl implements LoginService {
 	@Autowired
 	private LoginRepository loginRepository;
 
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
 	@Override
 	public Member login(LoginRequestDto loginRequestDto) {
-		Member loginMember = loginRepository.findLoginMember(loginRequestDto.getId(), loginRequestDto.getPwd());
-		if (loginMember == null) {
+		Member loginMember = loginRepository.findMemberById(loginRequestDto.getId());
+		if (loginMember == null || !matchesPassword(loginRequestDto.getPwd(), loginMember.getPwd())) {
 			throw new AuthenticationException("\uC544\uC774\uB514 \uB610\uB294 \uBE44\uBC00\uBC88\uD638\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
 		}
 
@@ -32,5 +36,15 @@ public class LoginServiceImpl implements LoginService {
 	@Override
 	public Member getStore(int ceoBno) {
 		return loginRepository.findLatestStoreByCeoBno(ceoBno);
+	}
+
+	private boolean matchesPassword(String rawPassword, String savedPassword) {
+		if (rawPassword == null || savedPassword == null) {
+			return false;
+		}
+		if (savedPassword.startsWith("$2a$") || savedPassword.startsWith("$2b$") || savedPassword.startsWith("$2y$")) {
+			return passwordEncoder.matches(rawPassword, savedPassword);
+		}
+		return rawPassword.equals(savedPassword);
 	}
 }

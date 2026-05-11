@@ -7,6 +7,10 @@
 		select * from member where id=#{id} and pwd=#{pwd}
 	</select>
 
+	<select id="getMemberById" parameterType="String" resultType="Member">
+		select * from member where id=#{id}
+	</select>
+
 	<select id="getStoreByCeoBno" parameterType="int" resultType="Member">
 		select
 			store_id as table_name,
